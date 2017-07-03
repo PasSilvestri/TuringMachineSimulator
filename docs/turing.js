@@ -36,11 +36,13 @@ function ExceptionControl(textObj){
 	
 	this.syntaxNotValid = function (line,str){
 		textObj.innerHTML = "Syntax not valid of comand at line " + line + " : " + str;
+		enableRunBtn(true);
 		this.error = 1;
 	}
 	
 	this.internalError = function (line){
 		textObj.innerHTML = "Internal error occured while " + line;
+		enableRunBtn(true);
 		this.error = 1;
 	}
 }
@@ -85,9 +87,8 @@ function init(){
 	
 	//Init onClick listner
 	runBtn.addEventListener("click",run);
-	runBtn.disabled = false;
-	stopBtn.addEventListener("click",function(){stopPressed = 1; runBtn.disabled = false; stopBtn.disabled = true;});
-	stopBtn.disabled = true;
+	stopBtn.addEventListener("click",function(){stopPressed = 1; enableRunBtn(true);});
+	enableRunBtn(true);
 }
 
 //The main function, runs the interpreter
@@ -108,8 +109,7 @@ function run(){
 	//Setting graphic objects
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 	stateLabel.innerHTML = general.currentState;
-	runBtn.disabled = true;
-	stopBtn.disabled = false;
+	enableRunBtn(false);
 	
 	
 	
@@ -125,8 +125,7 @@ function run(){
 		console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
 		printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 		stateLabel.innerHTML = general.currentState;
-		runBtn.disabled = false;
-		stopBtn.disabled = true;
+		enableRunBtn(true);
 	}
 	else{
 		//Set the speed
@@ -162,8 +161,7 @@ function intervalFunction(){
 	clearInterval(interval);
 	interval = -1;
 	*/
-	runBtn.disabled = false;
-	stopBtn.disabled = true;
+	enableRunBtn(true);
 }
 
 //Looping function that executes all comands
@@ -191,6 +189,17 @@ function loop(){
 			taCode.focus();
 			break;
 		}
+	}
+}
+
+function enableRunBtn(flag){
+	if(flag){
+		runBtn.disabled = false;
+		stopBtn.disabled = true;
+	}
+	else{
+		runBtn.disabled = true;
+		stopBtn.disabled = false;
 	}
 }
 
