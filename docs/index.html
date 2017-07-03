@@ -1,0 +1,175 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<title> Turing Interpreter</title>
+	
+	<style>
+		
+		
+		div#webpage {
+			width: 100%;
+			height: 100%;
+		}
+		
+		div#leftdiv {
+			float: left;
+			width: 68%;
+			height: 100%;
+			min-height: 100%;
+		}
+		
+		div#rightdiv {
+			float: right;
+			width: 30%;
+			height: 100%;
+			min-height: 100%;
+		}
+		
+		div#footerdiv {
+			position: absolute;
+			bottom: 8px;
+			width: 67%;
+			height: 10%;
+			max-height: 10%;
+			background-color: green;
+			color: white;
+			z-index: -1;
+			padding: 8px;
+		}
+		
+		.left {
+			margin: 1% 1% 1% 1%;
+			outline-color: green;
+		}
+		
+		.nastro {
+			width: 100%;
+		}
+		
+		.label {
+			align: center;
+			color: green;
+			text-align: center;
+		}
+		
+		.inputtext {
+			float: left;
+		}
+		
+		.outtext{
+			color: green;
+			overflow: auto;
+		}
+		
+		.outtextchar{
+			width: 1.6vw;
+			height: 1.3vw;
+			font-size: 1.1vw;
+			padding-left: 0.3vw; 
+			padding-right: 0.3vw;
+			border: 0.1vw solid green;
+		}
+		
+		.button {
+			padding: 0.3% 8% 0.3% 8%;
+		}
+		
+		button:disabled {
+			color: gray;
+		}
+		
+		.codetext {
+			float: right;
+			width: 100%;
+			height: 100%;
+			max-height: 100%;
+			overflow: scroll;
+			outline-color: green;
+		}
+		
+		.footertext {
+			margin-top: 0px;
+			margin-bottom: 8px;
+			width:100%
+			color: white;
+		}
+		
+		/* unvisited link */
+		a:link {
+			color: white;
+		}
+
+		/* visited link */
+		a:visited {
+			color: gary;
+		}
+
+		/* mouse over link */
+		a:hover {
+			color: white;
+			cursor: pointer;
+		}
+
+		/* selected link */
+		a:active {
+			color: white;
+		}
+		
+	</style>
+	
+	<script type="text/javascript" src="turing.js"></script>
+	
+	
+</head>
+<body>
+	<div id="webpage">
+		<div id="leftdiv">
+			<h1 align="center" class="label" style="margin-top: 10px;">Turing Machine (Beta)</h1>
+			<h1 id="statelabel" class="left nastro label" align="center" >0</h1>
+			<div class="left nastro outputtext">
+				<h3 id="outtext" class="outtext" align="center">Pas Silvestri</h3>
+			</div>
+			<input type="text" id="intext" class="left nastro inputtext" rows="1" cols="50"></textarea>
+			<div id="buttonsdiv" class="buttonsdiv nastro">
+				<button id="runbtn" class="left label button" value="Run">Run</button>
+				<button id="stopbtn" class="left label button" value="Stop">Stop</button>
+				<span class="left label">speed</span>  
+				<select id="speed" autocomplete="off" class="left label">
+				<option>1</option>
+				<option>2</option>
+				<option>3</option>
+				<option>4</option>
+				<option selected="">5</option>
+				<option>6</option>
+				<option>7</option>
+				<option>8</option>
+				<option>9</option>
+				<option>10</option>
+				<option>Max</option>
+				<option>Result only</option>
+				</select>
+			</div>
+			
+			<div id="footerdiv">
+				<p class="footertext"><a href="rules.html">Rules and info on how to use the simulator</a></p>
+				<p class="footertext">Turing machine simulator by Pasquale Silvestri</p>
+				<p class="footertext" align="right">Version 1.0 Beta 12</p>
+			</div>
+	
+		</div>
+		
+		<div id="rightdiv">
+			<textarea id="codetext" class="codetext" autocomplete="off" spellcheck="false">
+0,_,1,C,>
+1,_,2,i,>
+2,_,3,a,>
+3,_,4,o,-
+4,o,4,o,<
+4,a,4,a,<
+4,i,4,i,<
+4,C,END,C,-</textarea>
+		</div>
+	</div>
+	
+	<script type="text/javascript"> init();</script>
+</body>
