@@ -35,7 +35,6 @@ The machine will stop executing when there isn't a rule that applies to the curr
 
 ## Known bugs
 
-- Link to info and rules not working
 - javascript function startsWith doesen't work on IE11 and below
 
 
