@@ -4,6 +4,7 @@ var nastro;
 var taInput;
 var runBtn;
 var speedSelect;
+var stepLabel;
 
 var expControl;
 var timer;
@@ -21,6 +22,7 @@ var general = {
 	//General flags
 	nastroSideLength: 22,
 	stepCount: 0,
+	stepThreshold: 10000,
 	
 	//Execution var
 	nastroValue: [],
@@ -35,15 +37,21 @@ function ExceptionControl(textObj){
 	this.error = 0;
 	
 	this.syntaxNotValid = function (line,str){
-		textObj.innerHTML = "Syntax not valid of comand at line " + line + " : " + str;
-		enableRunBtn(true);
+		textObj.innerHTML = "[ERROR] Syntax not valid of comand at line " + line + " : " + str;
+		stop();
 		this.error = 1;
 	}
 	
 	this.internalError = function (line){
-		textObj.innerHTML = "Internal error occured while " + line;
-		enableRunBtn(true);
-		this.error = 1;
+		textObj.innerHTML = "[ERROR] Internal error occured while " + line;
+		stop();
+		this.error = 2;
+	}
+	
+	this.stepThresholdReached = function(line){
+		textObj.innerHTML += " || [ERROR] Step count threshold reached, steps: " + line;
+		stop();
+		this.error = 3;
 	}
 }
 
@@ -51,14 +59,16 @@ function ExceptionControl(textObj){
 function Timer(){
 	this.time = 0;
 	
-	this.increment = function(timer){
-		timer.time += 1;
+	this.increment = function(timer, granularity){
+		timer.time += granularity/1000;
+		console.log(timer.time);
 	}
 	
 	this.increment.bind(this);
 	
-	this.start = function(){
-		this.intCon = setInterval(this.increment,1000,this);
+	this.start = function(granularity){
+		granularity = granularity === undefined ? 1000 : granularity;
+		this.intCon = setInterval(this.increment,granularity ,this, granularity);
 	}
 	
 	this.stop = function(){
@@ -77,18 +87,20 @@ function init(){
 	runBtn = document.getElementById("runbtn");
 	stopBtn = document.getElementById("stopbtn");
 	speedSelect = document.getElementById("speed");
+	stepLabel = document.getElementById("steplabel");
 	
 	expControl = new ExceptionControl(stateLabel);
-	timer = new Timer();
-	//timer.start();
+	//timer = new Timer();
+	//timer.start(1000);
 
 	//Init nastro
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 	
 	//Init onClick listner
 	runBtn.addEventListener("click",run);
-	stopBtn.addEventListener("click",function(){stopPressed = 1; enableRunBtn(true);});
+	stopBtn.addEventListener("click",stop);
 	enableRunBtn(true);
+	stepLabel.innerHTML = "Stopped";
 }
 
 //The main function, runs the interpreter
@@ -110,6 +122,7 @@ function run(){
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 	stateLabel.innerHTML = general.currentState;
 	enableRunBtn(false);
+	stepLabel.innerHTML = "Steps: 0";
 	
 	
 	
@@ -121,11 +134,13 @@ function run(){
 	if(speedSelect.value == "Max" || speedSelect.value == "Result only"){
 		do{
 			loop();
-		}while(loopFlag == 1);
+		}while(loopFlag == 1 && stopPressed == 0 && expControl.error == 0);
 		console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
 		printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
-		stateLabel.innerHTML = general.currentState;
-		enableRunBtn(true);
+		if(expControl.error == 0){
+			stateLabel.innerHTML = general.currentState;
+		}
+		stop();
 	}
 	else{
 		//Set the speed
@@ -144,24 +159,25 @@ function run(){
 		//interval = setInterval(intervalFunction,speed);
 		intervalFunction();
 	}
-	
+}
 
+//Stops the execution and set everything accordingly
+function stop(){
+	stopPressed = 1;
+	enableRunBtn(true);
+	stepLabel.innerHTML = "Stopped. Steps: " + general.stepCount;
 }
 
 //Wrapper for loop() while speed not max
 function intervalFunction(){
-	if(loopFlag == 1 && stopPressed == 0){
+	if(loopFlag == 1 && stopPressed == 0 && expControl.error == 0){
 		loop();
-		if(stillExecutableComands(comands)){
+		if(stillExecutableComands(comands) && expControl.error == 0){
 			setTimeout(intervalFunction,speed);
 			return;
 		}
 	}
-	/*
-	clearInterval(interval);
-	interval = -1;
-	*/
-	enableRunBtn(true);
+	stop();
 }
 
 //Looping function that executes all comands
@@ -183,14 +199,21 @@ function loop(){
 		//If loopFlag == -1 error occured
 		if(loopFlag != 0){
 			var l = taCode.value.indexOf(comands[i]);
-			general.stepCount++;
 			taCode.selectionStart = l;
 			taCode.selectionEnd = l + comands[i].length;
 			taCode.focus();
+			general.stepCount++;
+			stepLabel.innerHTML = "Steps: " + general.stepCount;
+			if(general.stepCount >= general.stepThreshold){
+				expControl.stepThresholdReached(general.stepCount);
+			}
 			break;
 		}
 	}
 }
+
+
+
 
 function enableRunBtn(flag){
 	if(flag){
@@ -428,15 +451,6 @@ function executeComand(parameters){
 					return -1;
 				}
 				
-				//Print new state to screen with delay
-				if(speedSelect.value != "Result only"){
-					console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
-					printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
-					//setTimeout( printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength) ,2000/speedSelect.value);
-					stateLabel.innerHTML = general.currentState;
-				}
-				
-				
 				//Set the result to 1
 				res = 1;
 			}
@@ -469,17 +483,16 @@ function executeComand(parameters){
 					return -1;
 				}
 				
-				//Print new state to screen with delay
-				if(speedSelect.value != "Max"){
-					console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
-					printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
-					//setTimeout( printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength) ,2000/speedSelect.value);
-					stateLabel.innerHTML = general.currentState;
-				}
-				
 				//Set the result to 1
 				res = 1;
 			}
+		}
+		
+		//Print new state to screen with delay
+		if(speedSelect.value != "Result only"){
+			console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
+			printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
+			stateLabel.innerHTML = general.currentState;
 		}
 	}
 	return res;
