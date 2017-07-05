@@ -31,6 +31,12 @@ var general = {
 	currentState: "0"
 };
 
+function ComandLine(comand,line,original){
+	this.comand = comand || "";
+	this.line = line || 0;
+	this.original = original || "";
+}
+
 //Control all of the exceptions
 function ExceptionControl(textObj){
 	
@@ -185,22 +191,21 @@ function loop(){
 	loopFlag = 0;
 	for(var i=0; i<comands.length; i++){
 		//Ignore comments
-		if(comands[i].startsWith("//")){
-			console.log("Comment: " + comands[i]);
+		if(comands[i].comand.startsWith("//")){
 			continue;
 		}
 		//Ignore empty lines
-		if(isTrimmedEmpty(comands[i]) == 1){
+		if(isTrimmedEmpty(comands[i].comand) == 1){
 			continue;
 		}
 		//Execute and register result
-		loopFlag = executeComand(comands[i].split(','));
+		loopFlag = executeComand(comands[i].comand.split(','));
 		//If loopFlag == 1 break and restart for loop
 		//If loopFlag == -1 error occured
 		if(loopFlag != 0){
-			var l = taCode.value.indexOf(comands[i]);
+			var l = taCode.value.indexOf(comands[i].original);
 			taCode.selectionStart = l;
-			taCode.selectionEnd = l + comands[i].length;
+			taCode.selectionEnd = l + comands[i].original.length;
 			taCode.focus();
 			general.stepCount++;
 			stepLabel.innerHTML = "Steps: " + general.stepCount;
@@ -226,10 +231,20 @@ function enableRunBtn(flag){
 	}
 }
 
-//Check if there are still comands to be executed
+//Check if there are still comands to be executed (comandList instanceof Array of ComandLine)
 function stillExecutableComands(comandList){
 	for(var i=0; i<comandList.length; i++){
-		var parameters = comandList[i].split(",");
+
+        //Ignore comments
+        if(comandList[i].comand.startsWith("//")){
+            continue;
+        }
+        //Ignore empty lines
+        if(isTrimmedEmpty(comandList[i].comand) == 1){
+            continue;
+        }
+
+		var parameters = comandList[i].comand.split(",");
 		
 		//Check state we are in
 		if(general.currentState == parameters[0].trim()){
@@ -250,8 +265,9 @@ function stillExecutableComands(comandList){
 }
 
 //Retrieve the comand list and does a check on the validity of the comands
-function retrieve(taCode){
+function retrieve(taCode, expControl) {
 	var comandList = taCode.value.split("\n");
+	var finalComandList = new Array();
 	
 	for(var i=0; i<comandList.length; i++){
 		
@@ -288,12 +304,31 @@ function retrieve(taCode){
 			expControl.syntaxNotValid(i+1,"Non valid parameters, param #5 needs to be \"<,>,-\"");
 			return null;
 		}
+
+		//Expand comand if is a compacted rule
+		var tempExpanded = expand(comandList[i],i);
+		for(var c=0; c<tempExpanded.length; c++){
+			finalComandList.push(tempExpanded[c]);
+		}
+
 	}
 	
-	return comandList;
+	return finalComandList;
 }
 
-//Prints str to nastro, coloring red the centralChar
+function expand(original,line){
+	var array = new Array();
+	var comand = new ComandLine();
+	comand.line = line;
+	comand.original = original;
+	//Dummy code --- to be changed with expansion rules
+	comand.comand = original;
+	array.push(comand);
+
+	return array
+}
+
+//Prints str to nastro with all the cells
 function printNastro(nastro,array,negArray,indexCentralChar,sideLength){
 	var str = fromArrayToString(array,negArray);
 	if(negArray !== undefined){
