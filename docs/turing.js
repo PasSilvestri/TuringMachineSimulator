@@ -17,14 +17,14 @@ var interval;
 var speed = 800;
 
 //Expansion logic flags and vars
-var alphabet = "!\"#$%&\'()*+,-./:;<=>?@0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[]^-{|}";
+var alphabet = "!\"#$%&\'()*+,-./:;<=>?@0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[]^-{|} "; //The space at the end is a usable char
 
 
 var general = {
 	//General flags
 	nastroSideLength: 22,
 	stepCount: 0,
-	stepThreshold: 10000,
+	stepThreshold: 400000,
 	
 	//Execution var
 	nastroValue: [],
@@ -78,7 +78,7 @@ function ExceptionControl(textObj){
 	this.expansionError = function (line) {
         textObj.innerHTML = "[ERROR] Expansion error: " + line;
         stop();
-        this.error = 3;
+        this.error = 4;
     }
 }
 
@@ -158,16 +158,19 @@ function run(){
 	if(comands == null) return;
 	
 	//Starts actual execution
-	if(speedSelect.value == "Max" || speedSelect.value == "Result only"){
-		do{
-			loop();
-		}while(loopFlag == 1 && stopPressed == 0 && expControl.error == 0);
-		console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
-		printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
-		if(expControl.error == 0){
-			stateLabel.innerHTML = general.currentState;
-		}
-		stop();
+	if(speedSelect.value == "Result only"){
+        stepLabel.innerHTML = "Wait for result...";
+		setTimeout(function(){
+            do{
+                loop();
+            }while(loopFlag == 1 && stopPressed == 0 && expControl.error == 0);
+            console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
+            printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
+            if(expControl.error == 0){
+                stateLabel.innerHTML = general.currentState;
+            }
+            stop();
+		},0);
 	}
 	else{
 		//Set the speed
@@ -182,8 +185,9 @@ function run(){
 		else if(speedSelect.value == 8) speed = 200;
 		else if(speedSelect.value == 9) speed = 100;
 		else if(speedSelect.value == 10) speed = 50;
+		else if(speedSelect.value == "Max") speed = 0;
 		
-		//interval = setInterval(intervalFunction,speed);
+		//setTimeout(intervalFunction,speed);
 		intervalFunction();
 	}
 }
@@ -228,6 +232,14 @@ function loop(){
 		//If loopFlag == 1 break and restart for loop
 		//If loopFlag == -1 error occured
 		if(loopFlag != 0){
+
+            //Print new state to screen
+            if(speedSelect.value != "Result only"){
+                console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
+                printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
+                stateLabel.innerHTML = general.currentState;
+            }
+
 			var l = taCode.value.indexOf(comands[i].original);
 			taCode.selectionStart = l;
 			taCode.selectionEnd = l + comands[i].original.length;
@@ -273,7 +285,7 @@ function stillExecutableComands(comandList){
         var parameters = temp.split("§");
 		
 		//Check state we are in
-		if(general.currentState == parameters[0].trim()){
+		if(general.currentState == parameters[0]){
 			//Check char on nastro
 			if(general.nastroIndex >=0){
 				if(general.nastroValue[general.nastroIndex] == parameters[1].charAt(0) || ( general.nastroValue[general.nastroIndex] == undefined && parameters[1].charAt(0) == '_' ) ){
@@ -314,8 +326,15 @@ function retrieve(taCode, expControl) {
 		var tempComand = replaceIfNotEscaped(comandList[i],",","§");
 		var parameters = tempComand.split("§");
 
+		//cleaning parameters where spaces are uninfluential
+        parameters[0] = parameters[0].trim();
+		parameters[2] = parameters[2].trim();
+		parameters[4] = parameters[4].trim();
+		comandList[i] = parameters[0]+","+parameters[1]+","+parameters[2]+","+parameters[3]+","+parameters[4];
 
-		//Check for the amount of parameters
+
+
+        //Check for the amount of parameters
 		if(parameters.length < 5){
 			expControl.syntaxNotValid(i+1,"Too few parameters");
 			return null;
@@ -461,6 +480,10 @@ function expand(original,line){
 
 
             //Getting the length of the expansion
+			if(class1Length == 0){
+                expControl.syntaxNotValid(line+1,"Non valid parameters, params cannot be empty");
+                return null;
+			}
 			if(class1Length == -1){
             	class1Length = expContent.replace(/\\/g,"").length;
 			}
@@ -547,6 +570,10 @@ function expand(original,line){
 
 
             //Getting the length of the expansion
+            if(class2Length == 0){
+                expControl.syntaxNotValid(line+1,"Non valid parameters, params cannot be empty");
+                return null;
+            }
             if(class2Length == -1){
                 class2Length = expContent.replace(/\\/g,"").length;
             }
@@ -632,6 +659,10 @@ function expand(original,line){
 
 
             //Getting the length of the expansion
+            if(class3Length == 0){
+                expControl.syntaxNotValid(line+1,"Non valid parameters, params cannot be empty");
+                return null;
+            }
             if(class3Length == -1){
                 class3Length = expContent.replace(/\\/g,"").length;
             }
@@ -949,12 +980,12 @@ function executeComand(parameters){
 	}
 	
 	//Check state we are in
-	if(general.currentState == parameters[0].trim()){
+	if(general.currentState == parameters[0]){
 		//Check char on nastro
 		if(general.nastroIndex >=0){
 			if(general.nastroValue[general.nastroIndex] == parameters[1].charAt(0) || ( general.nastroValue[general.nastroIndex] == undefined && parameters[1].charAt(0) == '_' )){
 				//Change state and nastro value
-				general.currentState = parameters[2].trim();
+				general.currentState = parameters[2];
 				if(parameters[3].charAt(0) == '_'){
 					delete general.nastroValue[general.nastroIndex];
 				}
@@ -1014,13 +1045,6 @@ function executeComand(parameters){
 				//Set the result to 1
 				res = 1;
 			}
-		}
-		
-		//Print new state to screen with delay
-		if(speedSelect.value != "Result only"){
-			console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
-			printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
-			stateLabel.innerHTML = general.currentState;
 		}
 	}
 	return res;

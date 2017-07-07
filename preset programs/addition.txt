@@ -1,0 +1,29 @@
+//write on the tape "n+n"
+//with n being a number
+//will add them together and show the result at the center of the tape
+
+0,(^_),0,(^_),>
+0,_,R,_,<
+R,+,END,_,-
+
+R,(1..9),RF,(0..8),<
+R,0,R1,9,<
+R1,0,R1,9,<
+R1,(1..9),RF,(0..8),<
+
+RF,(^+),RF,(^+),<
+RF,+,L,+,<
+
+L,(0..8),LF,(1..9),<
+L,9,L1,0,<
+L1,9,L1,0,<
+L1,(0..8),LF,(1..9),<
+L1,_,LF,1,<
+
+LF,(^_),LF,(^_),<
+LF,_,0,_,>
+
+R1,+,DEL,_,>
+DEL,(^_),DEL,_,>
+DEL,_,FINE,_,<
+FINE,_,FINE,_,<
