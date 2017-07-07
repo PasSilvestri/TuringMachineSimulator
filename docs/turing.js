@@ -187,8 +187,8 @@ function run(){
 		else if(speedSelect.value == 10) speed = 50;
 		else if(speedSelect.value == "Max") speed = 0;
 		
-		//setTimeout(intervalFunction,speed);
-		intervalFunction();
+		setTimeout(intervalFunction,speed);
+		//intervalFunction();
 	}
 }
 
@@ -330,7 +330,7 @@ function retrieve(taCode, expControl) {
         parameters[0] = parameters[0].trim();
 		parameters[2] = parameters[2].trim();
 		parameters[4] = parameters[4].trim();
-		comandList[i] = parameters[0]+","+parameters[1]+","+parameters[2]+","+parameters[3]+","+parameters[4];
+		var cm = parameters[0]+","+parameters[1]+","+parameters[2]+","+parameters[3]+","+parameters[4];
 
 
 
@@ -374,7 +374,7 @@ function retrieve(taCode, expControl) {
 		}
 
 		//Expand comand if is a compacted rule
-		var tempExpanded = expand(comandList[i],i);
+		var tempExpanded = expand(cm,comandList[i],i);
 		if(tempExpanded == null) return null;
 		//finalComandList.concat(tempExpanded);
 
@@ -389,20 +389,16 @@ function retrieve(taCode, expControl) {
 }
 
 //Expand the compacted comands and return an array of comandLines with the same original comand
-function expand(original,line){
+function expand(cm,original,line){
 	var array = new Array();
 	var comand = new ComandLine();
 	comand.line = line;
 	comand.original = original;
 
-	//Dummy code --- to be changed with expansion rules
-    /*comand.comand = original;
-	array.push(comand);*/
-
 	//Expansion
 	//1) check for expansion errors and expansion classes lengths in the parameters
-	original = replaceIfNotEscaped(original,",","§");
-	var param = original.split("§");
+	var s = replaceIfNotEscaped(cm,",","§");
+	var param = s.split("§");
 	var class1Length = -1, class2Length = -1, class3Length = -1;
     var cs = -1; //Index of the first opening parenthesis - c1s = class start
     var ce = -1; //Index of the first closing parenthesis - c1s = class end
@@ -783,7 +779,7 @@ function expand(original,line){
 
 	//If there wasn't any expansion at all, add the comand as it is to the list
 	if(class1Length == -1 && class2Length == -1 && class3Length == -1){
-    	comand.comand = comand.original
+    	comand.comand = cm;
 		array.push(comand);
 	}
 
