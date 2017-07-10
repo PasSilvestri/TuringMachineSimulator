@@ -1,0 +1,6 @@
+//This will print "Ciao" as the default example
+//But will do it with just 3 rules
+
+(0..3),_,(1..4),(Ciao),(>>>-)
+4,(^_),4,(^_),<
+4,_,END,_,>

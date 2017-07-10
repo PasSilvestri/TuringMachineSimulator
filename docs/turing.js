@@ -12,8 +12,6 @@ var timer;
 var comands;
 var loopFlag = 0;
 var stopPressed = 0;
-//Hold the id of the looping interval
-var interval;
 var speed = 800;
 
 //Expansion logic flags and vars
@@ -58,7 +56,7 @@ function ExceptionControl(textObj){
 	this.error = 0;
 	
 	this.syntaxNotValid = function (line,str){
-		textObj.innerHTML = "[ERROR] Syntax not valid of comand at line " + line + " : " + str;
+		textObj.innerHTML = "[ERROR] Syntax not valid of command at line " + line + " : " + str;
 		stop();
 		this.error = 1;
 	}
@@ -147,19 +145,21 @@ function run(){
 	
 	//Setting graphic objects
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
-	stateLabel.innerHTML = general.currentState;
+	stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
 	enableRunBtn(false);
 	stepLabel.innerHTML = "Steps: 0";
 	
 	
 	
-	//retrieve comand list
+	//retrieve command list
 	comands = retrieve(taCode,expControl);
 	if(comands == null) return;
 	
 	//Starts actual execution
 	if(speedSelect.value == "Result only"){
         stepLabel.innerHTML = "Wait for result...";
+        //I used setTimeout cause apparently solve the problem of chrome tabs crashing after a certain amount of steps
+		//I think gives control back to the rendering thread and this stops the countdown if there is no activity. But is just a guess, i'm learning
 		setTimeout(function(){
             do{
                 loop();
@@ -167,7 +167,7 @@ function run(){
             console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
             printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
             if(expControl.error == 0){
-                stateLabel.innerHTML = general.currentState;
+                stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
             }
             stop();
 		},0);
@@ -188,7 +188,6 @@ function run(){
 		else if(speedSelect.value == "Max") speed = 0;
 		
 		setTimeout(intervalFunction,speed);
-		//intervalFunction();
 	}
 }
 
@@ -211,7 +210,7 @@ function intervalFunction(){
 	stop();
 }
 
-//Looping function that executes all comands
+//Looping function that executes all commands
 function loop(){
 	loopFlag = 0;
 	for(var i=0; i<comands.length; i++){
@@ -237,7 +236,9 @@ function loop(){
             if(speedSelect.value != "Result only"){
                 console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
                 printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
-                stateLabel.innerHTML = general.currentState;
+                if(expControl.error == 0){
+                    stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
+                }
             }
 
 			var l = taCode.value.indexOf(comands[i].original);
@@ -266,7 +267,7 @@ function enableRunBtn(flag){
 	}
 }
 
-//Check if there are still comands to be executed (comandList instanceof Array of ComandLine)
+//Check if there are still commands to be executed (comandList instanceof Array of ComandLine)
 function stillExecutableComands(comandList){
 	for(var i=0; i<comandList.length; i++){
 
@@ -302,7 +303,7 @@ function stillExecutableComands(comandList){
 	return 0;
 }
 
-//Retrieve the comand list and does a check on the validity of the comands
+//Retrieve the command list and does a check on the validity of the commands
 function retrieve(taCode, expControl) {
 	var comandList = taCode.value.split("\n");
 	var finalComandList = new Array();
@@ -362,7 +363,7 @@ function retrieve(taCode, expControl) {
                     }
 				}
 
-                if(parameters[4].charAt(parameters[4].length-1) != ')' || parameters[4].charAt(parameters[4].length-1) != ']' || parameters[4].charAt(parameters[4].length-1) != ']'){
+                if(parameters[4].charAt(parameters[4].length-1) != ')' && parameters[4].charAt(parameters[4].length-1) != ']' && parameters[4].charAt(parameters[4].length-1) != '}'){
                     expControl.syntaxNotValid(i+1,"Non valid parameters, invalid param #5 expansion");
                     return null;
 				}
@@ -373,7 +374,7 @@ function retrieve(taCode, expControl) {
             }
 		}
 
-		//Expand comand if is a compacted rule
+		//Expand command if is a compacted rule
 		var tempExpanded = expand(cm,comandList[i],i);
 		if(tempExpanded == null) return null;
 		//finalComandList.concat(tempExpanded);
@@ -388,9 +389,11 @@ function retrieve(taCode, expControl) {
 	return finalComandList;
 }
 
-//Expand the compacted comands and return an array of comandLines with the same original comand
+//Expand the compacted commands and return an array of comandLines with the same original command
 function expand(cm,original,line){
 	var array = new Array();
+	var arrayClass2 = new Array();
+	var arrayClass3 = new Array();
 	var comand = new ComandLine();
 	comand.line = line;
 	comand.original = original;
@@ -413,7 +416,7 @@ function expand(cm,original,line){
 		for(var c = 0; c < param[i].length; c++){
 			if(param[i][c] == '(' && param[i][c-1] != '\\'){ //If there is a "(" not escaped...
 				if(flag != 0){ //...and is not the first one
-					expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+					expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
 					return null;
 				}
 				flag++;
@@ -421,7 +424,7 @@ function expand(cm,original,line){
 			}
 			else if(param[i][c] == ')' && param[i][c-1] != '\\'){ //If the is a ")" not escaped...
 				if(flag != 1){ //...and is not the firs one
-                    expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                    expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                     return null;
 				}
 				flag++;
@@ -429,7 +432,7 @@ function expand(cm,original,line){
 			}
 
 			if(flag > 2){
-                expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                 return null;
 			}
 		}
@@ -487,7 +490,7 @@ function expand(cm,original,line){
 				var counterLength = -1;
                 counterLength = expContent.replace(/\\/g,"").length;
                 if(counterLength != class1Length){
-                	expControl.expansionError("Different expansion class lengths at comand in line " + (line+1) );
+                	expControl.expansionError("Different expansion class lengths at command in line " + (line+1) );
                 	return null;
 				}
 			}
@@ -504,7 +507,7 @@ function expand(cm,original,line){
         for(var c = 0; c < param[i].length; c++){
             if(param[i][c] == '[' && param[i][c-1] != '\\'){ //If there is a "[" not escaped...
                 if(flag != 0){ //...and is not the first one
-                    expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                    expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                     return null;
                 }
                 flag++;
@@ -512,7 +515,7 @@ function expand(cm,original,line){
             }
             else if(param[i][c] == ']' && param[i][c-1] != '\\'){ //If the is a "]" not escaped...
                 if(flag != 1){ //...and is not the firs one
-                    expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                    expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                     return null;
                 }
                 flag++;
@@ -520,7 +523,7 @@ function expand(cm,original,line){
             }
 
             if(flag > 2){
-                expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                 return null;
             }
         }
@@ -577,7 +580,7 @@ function expand(cm,original,line){
                 var counterLength = -1;
                 counterLength = expContent.replace(/\\/g,"").length;
                 if(counterLength != class2Length){
-                    expControl.expansionError("Different expansion class lengths at comand in line " + (line+1) );
+                    expControl.expansionError("Different expansion class lengths at command in line " + (line+1) );
                     return null;
                 }
             }
@@ -593,7 +596,7 @@ function expand(cm,original,line){
         for(var c = 0; c < param[i].length; c++){
             if(param[i][c] == '{' && param[i][c-1] != '\\'){ //If there is a "{" not escaped...
                 if(flag != 0){ //...and is not the first one
-                    expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                    expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                     return null;
                 }
                 flag++;
@@ -601,7 +604,7 @@ function expand(cm,original,line){
             }
             else if(param[i][c] == '}' && param[i][c-1] != '\\'){ //If the is a "}" not escaped...
                 if(flag != 1){ //...and is not the firs one
-                    expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                    expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                     return null;
                 }
                 flag++;
@@ -609,7 +612,7 @@ function expand(cm,original,line){
             }
 
             if(flag > 2){
-                expControl.expansionError("To many expansion parenthesis in comand at line " + (line+1) );
+                expControl.expansionError("To many expansion parenthesis in command at line " + (line+1) );
                 return null;
             }
         }
@@ -666,7 +669,7 @@ function expand(cm,original,line){
                 var counterLength = -1;
                 counterLength = expContent.replace(/\\/g,"").length;
                 if(counterLength != class3Length){
-                    expControl.expansionError("Different expansion class lengths at comand in line " + (line+1) );
+                    expControl.expansionError("Different expansion class lengths at command in line " + (line+1) );
                     return null;
                 }
             }
@@ -678,6 +681,14 @@ function expand(cm,original,line){
 	}
 
 	var refactoredComand = param[0] + "," + param[1] + "," + param[2] + "," + param[3] + "," + param[4];
+
+    //If there wasn't any expansion at all, add the command as it is to the list
+    if(class1Length == -1 && class2Length == -1 && class3Length == -1){
+        comand.comand = cm;
+        array.push(comand);
+        return array;
+    }
+
 
 	//Cascade expansion
 
@@ -691,7 +702,7 @@ function expand(cm,original,line){
 
             if (param[i][c] == '(' && param[i][c - 1] != '\\') { //If there is a "(" not escaped...
                 if (container.flag != 0) { //...and is not the first one
-                    expControl.internalError("Expanding comand at line " + (line+1));
+                    expControl.internalError("Expanding command at line " + (line+1));
                     return null;
                 }
                 container.flag++;
@@ -699,7 +710,7 @@ function expand(cm,original,line){
             }
             else if (param[i][c] == ')' && param[i][c - 1] != '\\') { //If the is a ")" not escaped...
                 if (container.flag != 1) { //...and is not the firs one
-                    expControl.internalError("Expanding comand at line " + (line+1));
+                    expControl.internalError("Expanding command at line " + (line+1));
                     return null;
                 }
                 container.flag++;
@@ -707,7 +718,7 @@ function expand(cm,original,line){
             }
 
             if (container.flag > 2) {
-                expControl.internalError("Expanding comand at line " + (line+1));
+                expControl.internalError("Expanding command at line " + (line+1));
                 return null;
             }
         }
@@ -723,12 +734,12 @@ function expand(cm,original,line){
         containerArray.push(container);
     }
 
-	//Actual expansion, all the ni vars will make up the final comand
+	//Actual expansion, all the ni vars will make up the final command
     for(var i=0; i<class1Length; i++){
 		var n0,n1,n2,n3,n4;
 		//Param 1
 		if(containerArray[0].flag == 2){
-			n0 = param[0].replace(containerArray[0].toChange, containerArray[0].expContent[i]);
+			n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]) );
 		}
 		else{
 			n0 = param[0];
@@ -736,7 +747,7 @@ function expand(cm,original,line){
 
         //Param 2
         if(containerArray[1].flag == 2){
-            n1 = param[1].replace(containerArray[1].toChange, containerArray[1].expContent[i]);
+            n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]) );
         }
         else{
             n1 = param[1];
@@ -744,7 +755,7 @@ function expand(cm,original,line){
 
         //Param 3
         if(containerArray[2].flag == 2){
-            n2 = param[2].replace(containerArray[2].toChange, containerArray[2].expContent[i]);
+            n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]) );
         }
         else{
             n2 = param[2];
@@ -752,7 +763,7 @@ function expand(cm,original,line){
 
         //Param 4
         if(containerArray[3].flag == 2){
-            n3 = param[3].replace(containerArray[3].toChange, containerArray[3].expContent[i]);
+            n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]) );
         }
         else{
             n3 = param[3];
@@ -760,28 +771,234 @@ function expand(cm,original,line){
 
         //Param 5
         if(containerArray[4].flag == 2){
-            n4 = param[4].replace(containerArray[4].toChange, containerArray[4].expContent[i]);
+            n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]) );
         }
         else{
             n4 = param[4];
         }
 
         var nComand = comand.clone();
-        n0 = reescape(n0);
-        n1 = reescape(n1);
-        n2 = reescape(n2);
-        n3 = reescape(n3);
-        n4 = reescape(n4);
         nComand.comand = n0+","+n1+","+n2+","+n3+","+n4;
         array.push(nComand);
 	}
 
-
-	//If there wasn't any expansion at all, add the comand as it is to the list
-	if(class1Length == -1 && class2Length == -1 && class3Length == -1){
-    	comand.comand = cm;
-		array.push(comand);
+	//If no expansion happened
+	if(class1Length == -1){
+        comand.comand = refactoredComand;
+        array.push(comand);
 	}
+
+
+    //Second class expansion
+	for(var k=0; k<array.length; k++) {
+        var s = replaceIfNotEscaped(array[k].comand,",","§");
+        var param = s.split("§");
+
+        containerArray = new Array();
+        //Filling the containers with the class expansion infos
+        for (var i = 0; i < param.length; i++) {
+            container = new ExpansioClassContainer();
+
+            for (var c = 0; c < param[i].length; c++) {
+
+                if (param[i][c] == '[' && param[i][c - 1] != '\\') { //If there is a "[" not escaped...
+                    if (container.flag != 0) { //...and is not the first one
+                        expControl.internalError("Expanding command at line " + (line + 1));
+                        return null;
+                    }
+                    container.flag++;
+                    container.cs = c;
+                }
+                else if (param[i][c] == ']' && param[i][c - 1] != '\\') { //If the is a "]" not escaped...
+                    if (container.flag != 1) { //...and is not the firs one
+                        expControl.internalError("Expanding command at line " + (line + 1));
+                        return null;
+                    }
+                    container.flag++;
+                    container.ce = c;
+                }
+
+                if (container.flag > 2) {
+                    expControl.internalError("Expanding command at line " + (line + 1));
+                    return null;
+                }
+            }
+
+            if (container.flag == 2) {
+                container.expContent = param[i].substring(container.cs + 1, container.ce);
+                container.toChange = param[i].substring(container.cs, container.ce + 1);
+            }
+
+            //Cleaning the expContent of all the "\" so that aren't used as values
+            container.expContent = unescape(container.expContent);
+
+            containerArray.push(container);
+        }
+
+        //Actual expansion, all the ni vars will make up the final command
+        for (var i = 0; i < class2Length; i++) {
+            var n0, n1, n2, n3, n4;
+            //Param 1
+            if (containerArray[0].flag == 2) {
+                n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
+            }
+            else {
+                n0 = param[0];
+            }
+
+            //Param 2
+            if (containerArray[1].flag == 2) {
+                n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
+            }
+            else {
+                n1 = param[1];
+            }
+
+            //Param 3
+            if (containerArray[2].flag == 2) {
+                n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
+            }
+            else {
+                n2 = param[2];
+            }
+
+            //Param 4
+            if (containerArray[3].flag == 2) {
+                n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
+            }
+            else {
+                n3 = param[3];
+            }
+
+            //Param 5
+            if (containerArray[4].flag == 2) {
+                n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
+            }
+            else {
+                n4 = param[4];
+            }
+
+            var nComand = comand.clone();
+            nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
+            arrayClass2.push(nComand);
+        }
+    }
+
+    //Replace old data in array with new expanded rules
+	if(class2Length != -1){
+		array.splice(0,array.length); //Empty the array from old value
+        for(var k=0; k<arrayClass2.length; k++){
+            array.push(arrayClass2[k]);
+        }
+	}
+
+
+
+
+    //Third class expansion
+    for(var k=0; k<array.length; k++) {
+        var s = replaceIfNotEscaped(array[k].comand,",","§");
+        var param = s.split("§");
+
+        containerArray = new Array();
+        //Filling the containers with the class expansion infos
+        for (var i = 0; i < param.length; i++) {
+            container = new ExpansioClassContainer();
+
+            for (var c = 0; c < param[i].length; c++) {
+
+                if (param[i][c] == '{' && param[i][c - 1] != '\\') { //If there is a "{" not escaped...
+                    if (container.flag != 0) { //...and is not the first one
+                        expControl.internalError("Expanding command at line " + (line + 1));
+                        return null;
+                    }
+                    container.flag++;
+                    container.cs = c;
+                }
+                else if (param[i][c] == '}' && param[i][c - 1] != '\\') { //If the is a "}" not escaped...
+                    if (container.flag != 1) { //...and is not the firs one
+                        expControl.internalError("Expanding command at line " + (line + 1));
+                        return null;
+                    }
+                    container.flag++;
+                    container.ce = c;
+                }
+
+                if (container.flag > 2) {
+                    expControl.internalError("Expanding command at line " + (line + 1));
+                    return null;
+                }
+            }
+
+            if (container.flag == 2) {
+                container.expContent = param[i].substring(container.cs + 1, container.ce);
+                container.toChange = param[i].substring(container.cs, container.ce + 1);
+            }
+
+            //Cleaning the expContent of all the "\" so that aren't used as values
+            container.expContent = unescape(container.expContent);
+
+            containerArray.push(container);
+        }
+
+        //Actual expansion, all the ni vars will make up the final command
+        for (var i = 0; i < class3Length; i++) {
+            var n0, n1, n2, n3, n4;
+            //Param 1
+            if (containerArray[0].flag == 2) {
+                n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
+            }
+            else {
+                n0 = param[0];
+            }
+
+            //Param 2
+            if (containerArray[1].flag == 2) {
+                n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
+            }
+            else {
+                n1 = param[1];
+            }
+
+            //Param 3
+            if (containerArray[2].flag == 2) {
+                n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
+            }
+            else {
+                n2 = param[2];
+            }
+
+            //Param 4
+            if (containerArray[3].flag == 2) {
+                n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
+            }
+            else {
+                n3 = param[3];
+            }
+
+            //Param 5
+            if (containerArray[4].flag == 2) {
+                n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
+            }
+            else {
+                n4 = param[4];
+            }
+
+            var nComand = comand.clone();
+            nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
+            arrayClass3.push(nComand);
+        }
+    }
+
+    //Replace old data in array with new expanded rules
+    if(class3Length != -1){
+        array.splice(0,array.length); //Empty the array from old value
+        for(var k=0; k<arrayClass3.length; k++){
+            array.push(arrayClass3[k]);
+        }
+    }
+
+
 
 	return array
 }
@@ -965,13 +1182,13 @@ function fromArrayToString(array, negArray){
 	return (str2+str);
 }
 
-//Try to execute the comand. Needs array of 5 parameters
+//Try to execute the command. Needs array of 5 parameters
 //Return 1 if executed, 0 if not executed, -1 if error occured
 //Parameters will be clean, no chars to be escaped
 function executeComand(parameters){
 	var res = 0;
 	if(parameters.length != 5){
-		expControl.internalError("executing comand");
+		expControl.internalError("executing command");
 		return -1;
 	}
 	
@@ -1002,7 +1219,7 @@ function executeComand(parameters){
 				else if(parameters[4].charAt(0) == '-'){
 				}
 				else{
-					expControl.internalError("executing comand");
+					expControl.internalError("executing command");
 					return -1;
 				}
 				
@@ -1023,7 +1240,7 @@ function executeComand(parameters){
 				else{
 					general.nastroNegValue[(general.nastroIndex*-1)-1] = parameters[3].charAt(0);
 				}
-				
+
 				//Move index according to param n.5
 				if(parameters[4].charAt(0) == '>'){
 					general.nastroIndex++;
@@ -1034,7 +1251,7 @@ function executeComand(parameters){
 				else if(parameters[4].charAt(0) == '-'){
 				}
 				else{
-					expControl.internalError("executing comand");
+					expControl.internalError("executing command");
 					return -1;
 				}
 				

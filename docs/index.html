@@ -3,7 +3,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 	<!-- Icon By Attilio Baghino, thenounproject.com, https://creativecommons.org/licenses/by/3.0/us/ -->
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-	<title> Turing Interpreter</title>
+	<title> Turing Machine</title>
 	
 	<style>
 		
@@ -25,6 +25,7 @@
 			width: 30%;
 			height: 100%;
 			min-height: 100%;
+			z-index: 1;
 		}
 		
 		div#footerdiv {
@@ -61,8 +62,12 @@
 			color: green;
 			overflow: auto;
 		}
-
-		pre {
+		
+		.statemono {
+			font-family: Maison Mono,monospace;
+		}
+		
+		.tapemono {
 			font-family: Consolas,monospace;
 		}
 		
@@ -136,9 +141,9 @@
 	<div id="webpage">
 		<div id="leftdiv">
 			<h1 align="center" class="label" style="margin-top: 10px;">Turing Machine (Beta)</h1>
-			<pre><h1 id="statelabel" class="left nastro label" align="center" >0</h1></pre>
+			<h1 id="statelabel" class="left nastro label statemono" align="center" ><pre>0</pre></h1>
 			<div class="left nastro outputtext">
-				<pre><h3 id="outtext" class="outtext" align="center">Pas Silvestri</h3></pre>
+				<pre class="tapemono"><h3 id="outtext" class="outtext" align="center">Pas Silvestri</h3></pre>
 			</div>
 			<input type="text" id="intext" class="left nastro inputtext" rows="1" cols="50"></textarea>
 			<div id="buttonsdiv" class="buttonsdiv nastro">
@@ -163,9 +168,9 @@
 			</div>
 			
 			<div id="footerdiv">
-				<p class="footertext"><a href="https://github.com/PasSilvestri/TuringMachineSimulator">Rules and info on how to use the simulator <i>(GitHub page)</i></a></p>
+				<p class="footertext"><a href="https://github.com/PasSilvestri/TuringMachineSimulator" style="z-index: +1;">Rules and info on how to use the simulator <i>(GitHub page)</i></a></p>
 				<p class="footertext">Turing machine simulator by Pasquale Silvestri</p>
-				<p class="footertext" align="right">Version 1.0 Beta 17.5</p>
+				<p class="footertext" align="right">Version 1.0 Beta 18</p>
 			</div>
 	
 		</div>
