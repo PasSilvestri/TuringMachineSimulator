@@ -128,6 +128,13 @@ function init(){
 	stepLabel.innerHTML = "Stopped";
 }
 
+//Launched when enter is pressed in the input bar
+function inputEnter(event) {
+	if(event.which == 13 || event.keyCode == 13){
+		run();
+	}
+}
+
 //The main function, runs the interpreter
 function run(){
 	//Cleaning all flags and fields
@@ -1124,7 +1131,7 @@ function printNastro(nastro,array,negArray,indexCentralChar,sideLength){
 	for(var i=0; i<p1.length; i++){
 		finalStr += "<span class=\"outtextchar\">"+p1.charAt(i)+"</span>";
 	}
-	finalStr += "<span style=\"color: white; padding-left: 0.3vw; padding-right: 0.3vw; width: 1.3vw; height: 2vw; font-size: 2vw; background-color: green;\">" + c + "</span>"
+	finalStr += "<span style=\"color: white; padding-left: 0.3vw; padding-right: 0.3vw; width: 1.3vw; height: 2vw; font-size: 2vw; background-color: var(--main-color);\">" + c + "</span>"
 	for(var i=0; i<p2.length; i++){
 		finalStr += "<span class=\"outtextchar\">"+p2.charAt(i)+"</span>";
 	}

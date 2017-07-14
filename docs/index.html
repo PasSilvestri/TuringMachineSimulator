@@ -6,8 +6,22 @@
 	<title> Turing Machine</title>
 	
 	<style>
+	
+		:root{
+			--main-color: #005600;
+			--complementary-color: #ffffff;
+			--disabled-color: #808080;
+			--light-color: #cceccc;
+		}
+		
+		body {
+			background-image:url('res\\back.png');
+			background-repeat:no-repeat;
+			background-size: 100% 100%;
+		}
 		
 		
+		/*page layout styling*/
 		div#webpage {
 			width: 100%;
 			height: 100%;
@@ -34,101 +48,172 @@
 			width: 67%;
 			height: 10%;
 			max-height: 10%;
-			background-color: green;
-			color: white;
+			background-color: var(--main-color);
+			color: var(--complementary-color);
 			padding: 8px;
 		}
 		
+		
+		
+		/*style for every object in the left div*/
 		.left {
 			margin: 1% 1% 1% 1%;
-			outline-color: green;
+			outline-color: var(--main-color);
 		}
 		
+		
+		
+		/* width styling*/
 		.nastro {
 			width: 100%;
 		}
 		
+		
+		
+		/*style for labels and text in general*/
 		.label {
 			align: center;
-			color: green;
+			color: var(--main-color);
 			text-align: center;
 		}
 		
+		
+		
+		/*input bar*/
 		.inputtext {
 			float: left;
+			background-color: var(--light-color);
+			border: 0px;
+			padding: 0.3% 0.3% 0.3% 0.3%;
 		}
 		
+		
+		
+		/*tape header*/
 		.outtext{
-			color: green;
+			color: var(--main-color);
 			overflow: auto;
 		}
 		
+		
+		
+		/* Monospace css class for state*/
 		.statemono {
 			font-family: Maison Mono,monospace;
 		}
 		
+		
+		
+		/* Monospace css class for tape*/
 		.tapemono {
 			font-family: Consolas,monospace;
 		}
 		
+		
+		
+		/*style for the span that contains the tape letters*/
 		.outtextchar{
 			width: 1.6vw;
 			height: 1.3vw;
 			font-size: 1.1vw;
 			padding-left: 0.3vw; 
 			padding-right: 0.3vw;
-			border: 0.1vw solid green;
+			border: 0.1vw solid var(--main-color);
 		}
 		
+		
+		
+		/*buttons styling*/
 		.button {
-			padding: 0.3% 8% 0.3% 8%;
+			padding: 0.8% 8% 0.8% 8%;
 			font-weight: bold;
+			background-color: var(--main-color);
+			border: none;
+			color: var(--complementary-color);
+			box-shadow: 0 6px 16px 0 rgba(0,0,0,0.2), 0 2px 20px 0 rgba(0,0,0,0.19);
+			transition-duration: 0.4s;
+		}
+		
+		.button:hover:enabled {
+			cursor: pointer;
+			box-shadow: 2px 8px 16px 0 rgba(0,0,0,0.2), 0 4px 16px 0 rgba(0,0,0,0.19);
 		}
 		
 		button:disabled {
-			color: gray;
+			color: var(--disabled-color);
 			font-weight: normal;
+			box-shadow: none;
 		}
 		
+		/*styling select*/
+		select {
+			padding: 0.8% 0.8% 0.8% 0.8%;
+			width: 16%;
+			margin: 1% 1% 1% 1%;
+			font-weight: bold;
+			background-color: var(--main-color);
+			border: none;
+			color: var(--complementary-color);
+			box-shadow: 0 6px 16px 0 rgba(0,0,0,0.2), 0 2px 20px 0 rgba(0,0,0,0.19);
+			outline-color: var(--complementary-color);
+		}
+		
+		select:hover {
+			cursor: pointer;
+			box-shadow: 2px 8px 16px 0 rgba(0,0,0,0.2), 0 4px 16px 0 rgba(0,0,0,0.19);
+		}
+		
+		
+		/*step label*/
 		.labpushedright {
 			float: right;
 		}
 		
+		
+		
+		/* side text area for rules*/
 		.codetext {
 			float: right;
 			width: 100%;
 			height: 100%;
 			max-height: 100%;
 			overflow: scroll;
-			outline-color: green;
+			outline-color: var(--main-color);
+			background-color: var(--light-color);
 		}
 		
+		
+		
+		/*footer styling*/
 		.footertext {
 			margin-top: 0px;
 			margin-bottom: 8px;
 			width:100%;
-			color: white;
+			color: var(--complementary-color);
 		}
 		
+		
+		
+		/*link styling*/
 		/* unvisited link */
 		a:link {
-			color: white;
+			color: var(--complementary-color);
 		}
 
 		/* visited link */
 		a:visited {
-			color: lightgray;
+			color: var(--disabled-color);
 		}
 
 		/* mouse over link */
 		a:hover {
-			color: white;
+			color: var(--complementary-color);
 			cursor: pointer;
 		}
 
 		/* selected link */
 		a:active {
-			color: white;
+			color: var(--complementary-color);
 		}
 		
 	</style>
@@ -140,17 +225,17 @@
 <body>
 	<div id="webpage">
 		<div id="leftdiv">
-			<h1 align="center" class="label" style="margin-top: 10px;">Turing Machine (Beta)</h1>
+			<h1 align="center" class="label" style="margin-top: 10px;">Turing Machine</h1>
 			<h1 id="statelabel" class="left nastro label statemono" align="center" ><pre>0</pre></h1>
 			<div class="left nastro outputtext">
 				<pre class="tapemono"><h3 id="outtext" class="outtext" align="center">Pas Silvestri</h3></pre>
 			</div>
-			<input type="text" id="intext" class="left nastro inputtext" rows="1" cols="50"></textarea>
+			<input type="text" id="intext" class="left nastro inputtext" rows="1" cols="50" onkeypress="inputEnter(event)"></textarea>
 			<div id="buttonsdiv" class="buttonsdiv nastro">
 				<button id="runbtn" class="left label button" value="Run">Run</button>
-				<button id="stopbtn" class="left label button" value="Stop">Stop</button>
-				<span class="left label">speed</span>  
-				<select id="speed" autocomplete="off" class="left label">
+				<button id="stopbtn" class="left label button" value="Stop" disabled>Stop</button>
+				<span class="left label">speed</span>				
+				<select id="speed" autocomplete="off" align="left">
 				<option>1</option>
 				<option>2</option>
 				<option>3</option>
@@ -168,9 +253,9 @@
 			</div>
 			
 			<div id="footerdiv">
-				<p class="footertext"><a href="https://github.com/PasSilvestri/TuringMachineSimulator" style="z-index: +1;">Rules and info on how to use the simulator <i>(GitHub page)</i></a></p>
+				<p class="footertext"><a href="https://github.com/PasSilvestri/TuringMachineSimulator" style="z-index: 1;">Rules and info on how to use the simulator <i>(GitHub page)</i></a></p>
 				<p class="footertext">Turing machine simulator by Pasquale Silvestri</p>
-				<p class="footertext" align="right">Version 1.0 Beta 18</p>
+				<p class="footertext" align="right">Version 1.0 Beta 19</p>
 			</div>
 	
 		</div>
@@ -187,4 +272,15 @@
 	</div>
 	
 	<script type="text/javascript"> init();</script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.js"></script>
+	<script>
+	window.addEventListener("resize", selectSize);
+	
+	$(selectSize);
+	
+	function selectSize(){
+		$("#speed").height($("#runbtn").height()-0.05);
+	}
+	
+	</script>
 </body>

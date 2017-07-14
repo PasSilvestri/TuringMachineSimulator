@@ -53,8 +53,8 @@ state,c,stateC,1,>
 ```
 There are three ways of writing an expansion class<br/>
 - By specifying each character you need (As in the previous example)
-- By using 2 dots ".." in between to character
-- By using the negation character "^"
+- By using 2 dots ".." in between to character (Not available for param #5)
+- By using the negation character "^" (Not available for param #5)
 
 The first way is explained in the previous example.<br/>
 The second and the third way use the alphabet used by the machine.<br/>
