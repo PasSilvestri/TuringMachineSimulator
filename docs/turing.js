@@ -5,6 +5,9 @@ var taInput;
 var runBtn;
 var speedSelect;
 var stepLabel;
+var opt1;
+var opt1Label;
+var Jnastro;
 
 var expControl;
 var timer;
@@ -12,10 +15,13 @@ var timer;
 var comands;
 var loopFlag = 0;
 var stopPressed = 0;
-var speed = 800;
+var speed = 0;
+var compRulesPresent = 0; //Stores if there are any compact rules
+
+var opt1OldCode = "";
 
 //Expansion logic flags and vars
-var alphabet = "!\"#$%&\'()*+,-./:;<=>?@0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[]^-{|} "; //The space at the end is a usable char
+var alphabet = "!\"#$%&\'()*+,-./:;<=>?@0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[]^{|} "; //The space at the end is a usable char
 
 
 var general = {
@@ -108,11 +114,14 @@ function init(){
 	taCode = document.getElementById("codetext");
 	stateLabel = document.getElementById("statelabel");
 	nastro = document.getElementById("outtext");
+	Jnastro = $("#outtext");
 	taInput = document.getElementById("intext");
 	runBtn = document.getElementById("runbtn");
 	stopBtn = document.getElementById("stopbtn");
 	speedSelect = document.getElementById("speed");
 	stepLabel = document.getElementById("steplabel");
+	opt1 = document.getElementById("opt1");
+	opt1Label = document.getElementById("opt1label");
 	
 	expControl = new ExceptionControl(stateLabel);
 	//timer = new Timer();
@@ -121,11 +130,12 @@ function init(){
 	//Init nastro
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 	
-	//Init onClick listner
+	//Init Event listner
 	runBtn.addEventListener("click",run);
 	stopBtn.addEventListener("click",stop);
 	enableRunBtn(true);
 	stepLabel.innerHTML = "Stopped";
+	speedSelect.addEventListener("change", setSpeed);
 }
 
 //Launched when enter is pressed in the input bar
@@ -133,6 +143,31 @@ function inputEnter(event) {
 	if(event.which == 13 || event.keyCode == 13){
 		run();
 	}
+}
+
+//Reverts the expansion done by opt1 being selected
+function revertShowExp(){
+	if(opt1OldCode != "" && stopPressed == 1){
+		taCode.value = opt1OldCode;
+		opt1OldCode = "";
+	}
+}
+
+//Set the speed of the execution and animation
+function setSpeed(){
+	speed = 800;
+	if(speedSelect.value == 1) speed = 1800;
+	else if(speedSelect.value == 2) speed = 1500;
+	else if(speedSelect.value == 3) speed = 1300;
+	else if(speedSelect.value == 4) speed = 1000;
+	else if(speedSelect.value == 5) speed = 800;
+	else if(speedSelect.value == 6) speed = 500;
+	else if(speedSelect.value == 7) speed = 300;
+	else if(speedSelect.value == 8) speed = 200;
+	else if(speedSelect.value == 9) speed = 100;
+	else if(speedSelect.value == 10) speed = 50;
+	else if(speedSelect.value == "Max") speed = 0;
+	else if(speedSelect.value == "Result only") speed = 0;
 }
 
 //The main function, runs the interpreter
@@ -149,24 +184,41 @@ function run(){
 	general.nastroValue = fromStringToArray(taInput.value.replace(/\n/g,' '));
 	general.nastroNegValue = [];
 	general.nastroIndex = 0;
+	compRulesPresent = 0;
+	
 	
 	//Setting graphic objects
+	speed=0; //Set speed to 0 so this next tape print isn't animated
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
 	stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
 	enableRunBtn(false);
 	stepLabel.innerHTML = "Steps: 0";
 	
+	//Set the speed
+	setSpeed();
 	
 	
 	//retrieve command list
 	comands = retrieve(taCode,expControl);
 	if(comands == null) return;
 	
+	//if opt1 (show expanded rules) is check, write expanded rule in the text area
+	if(opt1.checked && compRulesPresent != 0){
+		opt1OldCode = taCode.value;
+		taCode.value = "//Expanded\n"
+		for(var k=0; k<comands.length; k++){
+			taCode.value += comands[k].comand + "\n";
+		}
+	}
+	//diable during execution, will be enabled by stop()
+	opt1.disabled = true;
+	
+	
 	//Starts actual execution
 	if(speedSelect.value == "Result only"){
         stepLabel.innerHTML = "Wait for result...";
         //I used setTimeout cause apparently solve the problem of chrome tabs crashing after a certain amount of steps
-		//I think gives control back to the rendering thread and this stops the countdown if there is no activity. But is just a guess, i'm learning
+		//I think gives control back to the rendering thread and this stops the countdown of the popup if there is no activity. But is just a guess, I'm learning
 		setTimeout(function(){
             do{
                 loop();
@@ -180,20 +232,7 @@ function run(){
 		},0);
 	}
 	else{
-		//Set the speed
-		speed = 800;
-		if(speedSelect.value == 1) speed = 1800;
-		else if(speedSelect.value == 2) speed = 1500;
-		else if(speedSelect.value == 3) speed = 1300;
-		else if(speedSelect.value == 4) speed = 1000;
-		else if(speedSelect.value == 5) speed = 800;
-		else if(speedSelect.value == 6) speed = 500;
-		else if(speedSelect.value == 7) speed = 300;
-		else if(speedSelect.value == 8) speed = 200;
-		else if(speedSelect.value == 9) speed = 100;
-		else if(speedSelect.value == 10) speed = 50;
-		else if(speedSelect.value == "Max") speed = 0;
-		
+		//Starts the recursive timed loop
 		setTimeout(intervalFunction,speed);
 	}
 }
@@ -202,6 +241,7 @@ function run(){
 function stop(){
 	stopPressed = 1;
 	enableRunBtn(true);
+	opt1.disabled = false;
 	stepLabel.innerHTML = "Stopped. Steps: " + general.stepCount;
 }
 
@@ -247,11 +287,25 @@ function loop(){
                     stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
                 }
             }
-
-			var l = taCode.value.indexOf(comands[i].original);
-			taCode.selectionStart = l;
-			taCode.selectionEnd = l + comands[i].original.length;
-			taCode.focus();
+			if(!opt1.checked){
+				//This if is needed to change the speed during execution. With absolute focus on the textarea was impossible to select other speeds
+				if(document.querySelector(":focus") != speedSelect){
+					var l = taCode.value.indexOf(comands[i].original);
+					//taCode.setSelectionRange(l,l + comands[i].original.length); Not working on chrome
+					taCode.selectionStart = l;
+					taCode.selectionEnd = l + comands[i].original.length;
+					taCode.focus();
+				}
+			}
+			else{
+				//This if is needed to change the speed during execution. With absolute focus on the textarea was impossible to select other speeds
+				if(document.querySelector(":focus") != speedSelect){
+					var l = taCode.value.indexOf(comands[i].comand);
+					taCode.selectionStart = l;
+					taCode.selectionEnd = l + comands[i].comand.length;
+					taCode.focus();
+				}
+			}
 			general.stepCount++;
 			stepLabel.innerHTML = "Steps: " + general.stepCount;
 			if(general.stepCount >= general.stepThreshold){
@@ -333,16 +387,8 @@ function retrieve(taCode, expControl) {
 
 		var tempComand = replaceIfNotEscaped(comandList[i],",","§");
 		var parameters = tempComand.split("§");
-
-		//cleaning parameters where spaces are uninfluential
-        parameters[0] = parameters[0].trim();
-		parameters[2] = parameters[2].trim();
-		parameters[4] = parameters[4].trim();
-		var cm = parameters[0]+","+parameters[1]+","+parameters[2]+","+parameters[3]+","+parameters[4];
-
-
-
-        //Check for the amount of parameters
+		
+		//Check for the amount of parameters
 		if(parameters.length < 5){
 			expControl.syntaxNotValid(i+1,"Too few parameters");
 			return null;
@@ -351,6 +397,14 @@ function retrieve(taCode, expControl) {
 			expControl.syntaxNotValid(i+1,"Too many parameters");
 			return null;
 		}
+		
+		
+
+		//cleaning parameters where spaces are uninfluential
+        parameters[0] = parameters[0].trim();
+		parameters[2] = parameters[2].trim();
+		parameters[4] = parameters[4].trim();
+
 		
 		//check for validity of parameters
 		if(parameters[0].length == 0 || parameters[1].length == 0 || parameters[2].length == 0 || parameters[3].length == 0 || parameters[4].length == 0){
@@ -380,12 +434,15 @@ function retrieve(taCode, expControl) {
                 return null;
             }
 		}
+		
+		//Rebuild cleaned command
+		var cm = parameters[0]+","+parameters[1]+","+parameters[2]+","+parameters[3]+","+parameters[4];
 
 		//Expand command if is a compacted rule
 		var tempExpanded = expand(cm,comandList[i],i);
-		if(tempExpanded == null) return null;
+		if(tempExpanded == null) return null; //Error occured
+		
 		//finalComandList.concat(tempExpanded);
-
 		for(var c=0; c<tempExpanded.length; c++){
 			finalComandList.push(tempExpanded[c]);
 		}
@@ -698,199 +755,201 @@ function expand(cm,original,line){
 
 
 	//Cascade expansion
+	compRulesPresent = 1; //There are compact rules, let's flag it
 
 	//First class expansion
 	var containerArray = new Array();
+	if(class1Length != -1){
 	//Filling the containers with the class expansion infos
-	for(var i=0; i<param.length; i++) {
-		var container = new ExpansioClassContainer();
+		for(var i=0; i<param.length; i++) {
+			var container = new ExpansioClassContainer();
 
-        for (var c = 0; c < param[i].length; c++) {
+			for (var c = 0; c < param[i].length; c++) {
 
-            if (param[i][c] == '(' && param[i][c - 1] != '\\') { //If there is a "(" not escaped...
-                if (container.flag != 0) { //...and is not the first one
-                    expControl.internalError("Expanding command at line " + (line+1));
-                    return null;
-                }
-                container.flag++;
-                container.cs = c;
-            }
-            else if (param[i][c] == ')' && param[i][c - 1] != '\\') { //If the is a ")" not escaped...
-                if (container.flag != 1) { //...and is not the firs one
-                    expControl.internalError("Expanding command at line " + (line+1));
-                    return null;
-                }
-                container.flag++;
-                container.ce = c;
-            }
+				if (param[i][c] == '(' && param[i][c - 1] != '\\') { //If there is a "(" not escaped...
+					if (container.flag != 0) { //...and is not the first one
+						expControl.internalError("Expanding command at line " + (line+1));
+						return null;
+					}
+					container.flag++;
+					container.cs = c;
+				}
+				else if (param[i][c] == ')' && param[i][c - 1] != '\\') { //If the is a ")" not escaped...
+					if (container.flag != 1) { //...and is not the firs one
+						expControl.internalError("Expanding command at line " + (line+1));
+						return null;
+					}
+					container.flag++;
+					container.ce = c;
+				}
 
-            if (container.flag > 2) {
-                expControl.internalError("Expanding command at line " + (line+1));
-                return null;
-            }
-        }
+				if (container.flag > 2) {
+					expControl.internalError("Expanding command at line " + (line+1));
+					return null;
+				}
+			}
 
-        if(container.flag == 2) {
-            container.expContent = param[i].substring(container.cs + 1, container.ce);
-            container.toChange = param[i].substring(container.cs, container.ce + 1);
-        }
+			if(container.flag == 2) {
+				container.expContent = param[i].substring(container.cs + 1, container.ce);
+				container.toChange = param[i].substring(container.cs, container.ce + 1);
+			}
 
-        //Cleaning the expContent of all the "\" so that aren't used as values
-		container.expContent = unescape(container.expContent);
+			//Cleaning the expContent of all the "\" so that aren't used as values
+			container.expContent = unescape(container.expContent);
 
-        containerArray.push(container);
-    }
-
-	//Actual expansion, all the ni vars will make up the final command
-    for(var i=0; i<class1Length; i++){
-		var n0,n1,n2,n3,n4;
-		//Param 1
-		if(containerArray[0].flag == 2){
-			n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]) );
-		}
-		else{
-			n0 = param[0];
+			containerArray.push(container);
 		}
 
-        //Param 2
-        if(containerArray[1].flag == 2){
-            n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]) );
-        }
-        else{
-            n1 = param[1];
-        }
+		//Actual expansion, all the ni vars will make up the final command
+		for(var i=0; i<class1Length; i++){
+			var n0,n1,n2,n3,n4;
+			//Param 1
+			if(containerArray[0].flag == 2){
+				n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]) );
+			}
+			else{
+				n0 = param[0];
+			}
 
-        //Param 3
-        if(containerArray[2].flag == 2){
-            n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]) );
-        }
-        else{
-            n2 = param[2];
-        }
+			//Param 2
+			if(containerArray[1].flag == 2){
+				n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]) );
+			}
+			else{
+				n1 = param[1];
+			}
 
-        //Param 4
-        if(containerArray[3].flag == 2){
-            n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]) );
-        }
-        else{
-            n3 = param[3];
-        }
+			//Param 3
+			if(containerArray[2].flag == 2){
+				n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]) );
+			}
+			else{
+				n2 = param[2];
+			}
 
-        //Param 5
-        if(containerArray[4].flag == 2){
-            n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]) );
-        }
-        else{
-            n4 = param[4];
-        }
+			//Param 4
+			if(containerArray[3].flag == 2){
+				n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]) );
+			}
+			else{
+				n3 = param[3];
+			}
 
-        var nComand = comand.clone();
-        nComand.comand = n0+","+n1+","+n2+","+n3+","+n4;
-        array.push(nComand);
+			//Param 5
+			if(containerArray[4].flag == 2){
+				n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]) );
+			}
+			else{
+				n4 = param[4];
+			}
+
+			var nComand = comand.clone();
+			nComand.comand = n0+","+n1+","+n2+","+n3+","+n4;
+			array.push(nComand);
+		}
 	}
-
 	//If no expansion happened
 	if(class1Length == -1){
         comand.comand = refactoredComand;
         array.push(comand);
 	}
 
+	if(class2Length != -1){
+		//Second class expansion
+		for(var k=0; k<array.length; k++) {
+			var s = replaceIfNotEscaped(array[k].comand,",","§");
+			var param = s.split("§");
 
-    //Second class expansion
-	for(var k=0; k<array.length; k++) {
-        var s = replaceIfNotEscaped(array[k].comand,",","§");
-        var param = s.split("§");
+			containerArray = new Array();
+			//Filling the containers with the class expansion infos
+			for (var i = 0; i < param.length; i++) {
+				container = new ExpansioClassContainer();
 
-        containerArray = new Array();
-        //Filling the containers with the class expansion infos
-        for (var i = 0; i < param.length; i++) {
-            container = new ExpansioClassContainer();
+				for (var c = 0; c < param[i].length; c++) {
 
-            for (var c = 0; c < param[i].length; c++) {
+					if (param[i][c] == '[' && param[i][c - 1] != '\\') { //If there is a "[" not escaped...
+						if (container.flag != 0) { //...and is not the first one
+							expControl.internalError("Expanding command at line " + (line + 1));
+							return null;
+						}
+						container.flag++;
+						container.cs = c;
+					}
+					else if (param[i][c] == ']' && param[i][c - 1] != '\\') { //If the is a "]" not escaped...
+						if (container.flag != 1) { //...and is not the firs one
+							expControl.internalError("Expanding command at line " + (line + 1));
+							return null;
+						}
+						container.flag++;
+						container.ce = c;
+					}
 
-                if (param[i][c] == '[' && param[i][c - 1] != '\\') { //If there is a "[" not escaped...
-                    if (container.flag != 0) { //...and is not the first one
-                        expControl.internalError("Expanding command at line " + (line + 1));
-                        return null;
-                    }
-                    container.flag++;
-                    container.cs = c;
-                }
-                else if (param[i][c] == ']' && param[i][c - 1] != '\\') { //If the is a "]" not escaped...
-                    if (container.flag != 1) { //...and is not the firs one
-                        expControl.internalError("Expanding command at line " + (line + 1));
-                        return null;
-                    }
-                    container.flag++;
-                    container.ce = c;
-                }
+					if (container.flag > 2) {
+						expControl.internalError("Expanding command at line " + (line + 1));
+						return null;
+					}
+				}
 
-                if (container.flag > 2) {
-                    expControl.internalError("Expanding command at line " + (line + 1));
-                    return null;
-                }
-            }
+				if (container.flag == 2) {
+					container.expContent = param[i].substring(container.cs + 1, container.ce);
+					container.toChange = param[i].substring(container.cs, container.ce + 1);
+				}
 
-            if (container.flag == 2) {
-                container.expContent = param[i].substring(container.cs + 1, container.ce);
-                container.toChange = param[i].substring(container.cs, container.ce + 1);
-            }
+				//Cleaning the expContent of all the "\" so that aren't used as values
+				container.expContent = unescape(container.expContent);
 
-            //Cleaning the expContent of all the "\" so that aren't used as values
-            container.expContent = unescape(container.expContent);
+				containerArray.push(container);
+			}
 
-            containerArray.push(container);
-        }
+			//Actual expansion, all the ni vars will make up the final command
+			for (var i = 0; i < class2Length; i++) {
+				var n0, n1, n2, n3, n4;
+				//Param 1
+				if (containerArray[0].flag == 2) {
+					n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
+				}
+				else {
+					n0 = param[0];
+				}
 
-        //Actual expansion, all the ni vars will make up the final command
-        for (var i = 0; i < class2Length; i++) {
-            var n0, n1, n2, n3, n4;
-            //Param 1
-            if (containerArray[0].flag == 2) {
-                n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
-            }
-            else {
-                n0 = param[0];
-            }
+				//Param 2
+				if (containerArray[1].flag == 2) {
+					n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
+				}
+				else {
+					n1 = param[1];
+				}
 
-            //Param 2
-            if (containerArray[1].flag == 2) {
-                n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
-            }
-            else {
-                n1 = param[1];
-            }
+				//Param 3
+				if (containerArray[2].flag == 2) {
+					n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
+				}
+				else {
+					n2 = param[2];
+				}
 
-            //Param 3
-            if (containerArray[2].flag == 2) {
-                n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
-            }
-            else {
-                n2 = param[2];
-            }
+				//Param 4
+				if (containerArray[3].flag == 2) {
+					n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
+				}
+				else {
+					n3 = param[3];
+				}
 
-            //Param 4
-            if (containerArray[3].flag == 2) {
-                n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
-            }
-            else {
-                n3 = param[3];
-            }
+				//Param 5
+				if (containerArray[4].flag == 2) {
+					n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
+				}
+				else {
+					n4 = param[4];
+				}
 
-            //Param 5
-            if (containerArray[4].flag == 2) {
-                n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
-            }
-            else {
-                n4 = param[4];
-            }
-
-            var nComand = comand.clone();
-            nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
-            arrayClass2.push(nComand);
-        }
-    }
-
+				var nComand = comand.clone();
+				nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
+				arrayClass2.push(nComand);
+			}
+		}
+	}
     //Replace old data in array with new expanded rules
 	if(class2Length != -1){
 		array.splice(0,array.length); //Empty the array from old value
@@ -901,102 +960,102 @@ function expand(cm,original,line){
 
 
 
+	if(class3Length){
+		//Third class expansion
+		for(var k=0; k<array.length; k++) {
+			var s = replaceIfNotEscaped(array[k].comand,",","§");
+			var param = s.split("§");
 
-    //Third class expansion
-    for(var k=0; k<array.length; k++) {
-        var s = replaceIfNotEscaped(array[k].comand,",","§");
-        var param = s.split("§");
+			containerArray = new Array();
+			//Filling the containers with the class expansion infos
+			for (var i = 0; i < param.length; i++) {
+				container = new ExpansioClassContainer();
 
-        containerArray = new Array();
-        //Filling the containers with the class expansion infos
-        for (var i = 0; i < param.length; i++) {
-            container = new ExpansioClassContainer();
+				for (var c = 0; c < param[i].length; c++) {
 
-            for (var c = 0; c < param[i].length; c++) {
+					if (param[i][c] == '{' && param[i][c - 1] != '\\') { //If there is a "{" not escaped...
+						if (container.flag != 0) { //...and is not the first one
+							expControl.internalError("Expanding command at line " + (line + 1));
+							return null;
+						}
+						container.flag++;
+						container.cs = c;
+					}
+					else if (param[i][c] == '}' && param[i][c - 1] != '\\') { //If the is a "}" not escaped...
+						if (container.flag != 1) { //...and is not the firs one
+							expControl.internalError("Expanding command at line " + (line + 1));
+							return null;
+						}
+						container.flag++;
+						container.ce = c;
+					}
 
-                if (param[i][c] == '{' && param[i][c - 1] != '\\') { //If there is a "{" not escaped...
-                    if (container.flag != 0) { //...and is not the first one
-                        expControl.internalError("Expanding command at line " + (line + 1));
-                        return null;
-                    }
-                    container.flag++;
-                    container.cs = c;
-                }
-                else if (param[i][c] == '}' && param[i][c - 1] != '\\') { //If the is a "}" not escaped...
-                    if (container.flag != 1) { //...and is not the firs one
-                        expControl.internalError("Expanding command at line " + (line + 1));
-                        return null;
-                    }
-                    container.flag++;
-                    container.ce = c;
-                }
+					if (container.flag > 2) {
+						expControl.internalError("Expanding command at line " + (line + 1));
+						return null;
+					}
+				}
 
-                if (container.flag > 2) {
-                    expControl.internalError("Expanding command at line " + (line + 1));
-                    return null;
-                }
-            }
+				if (container.flag == 2) {
+					container.expContent = param[i].substring(container.cs + 1, container.ce);
+					container.toChange = param[i].substring(container.cs, container.ce + 1);
+				}
 
-            if (container.flag == 2) {
-                container.expContent = param[i].substring(container.cs + 1, container.ce);
-                container.toChange = param[i].substring(container.cs, container.ce + 1);
-            }
+				//Cleaning the expContent of all the "\" so that aren't used as values
+				container.expContent = unescape(container.expContent);
 
-            //Cleaning the expContent of all the "\" so that aren't used as values
-            container.expContent = unescape(container.expContent);
+				containerArray.push(container);
+			}
 
-            containerArray.push(container);
-        }
+			//Actual expansion, all the ni vars will make up the final command
+			for (var i = 0; i < class3Length; i++) {
+				var n0, n1, n2, n3, n4;
+				//Param 1
+				if (containerArray[0].flag == 2) {
+					n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
+				}
+				else {
+					n0 = param[0];
+				}
 
-        //Actual expansion, all the ni vars will make up the final command
-        for (var i = 0; i < class3Length; i++) {
-            var n0, n1, n2, n3, n4;
-            //Param 1
-            if (containerArray[0].flag == 2) {
-                n0 = param[0].replace(containerArray[0].toChange, reescape(containerArray[0].expContent[i]));
-            }
-            else {
-                n0 = param[0];
-            }
+				//Param 2
+				if (containerArray[1].flag == 2) {
+					n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
+				}
+				else {
+					n1 = param[1];
+				}
 
-            //Param 2
-            if (containerArray[1].flag == 2) {
-                n1 = param[1].replace(containerArray[1].toChange, reescape(containerArray[1].expContent[i]));
-            }
-            else {
-                n1 = param[1];
-            }
+				//Param 3
+				if (containerArray[2].flag == 2) {
+					n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
+				}
+				else {
+					n2 = param[2];
+				}
 
-            //Param 3
-            if (containerArray[2].flag == 2) {
-                n2 = param[2].replace(containerArray[2].toChange, reescape(containerArray[2].expContent[i]));
-            }
-            else {
-                n2 = param[2];
-            }
+				//Param 4
+				if (containerArray[3].flag == 2) {
+					n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
+				}
+				else {
+					n3 = param[3];
+				}
 
-            //Param 4
-            if (containerArray[3].flag == 2) {
-                n3 = param[3].replace(containerArray[3].toChange, reescape(containerArray[3].expContent[i]));
-            }
-            else {
-                n3 = param[3];
-            }
+				//Param 5
+				if (containerArray[4].flag == 2) {
+					n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
+				}
+				else {
+					n4 = param[4];
+				}
 
-            //Param 5
-            if (containerArray[4].flag == 2) {
-                n4 = param[4].replace(containerArray[4].toChange, reescape(containerArray[4].expContent[i]));
-            }
-            else {
-                n4 = param[4];
-            }
-
-            var nComand = comand.clone();
-            nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
-            arrayClass3.push(nComand);
-        }
-    }
-
+				var nComand = comand.clone();
+				nComand.comand = n0 + "," + n1 + "," + n2 + "," + n3 + "," + n4;
+				arrayClass3.push(nComand);
+			}
+		}
+	}
     //Replace old data in array with new expanded rules
     if(class3Length != -1){
         array.splice(0,array.length); //Empty the array from old value
@@ -1120,7 +1179,7 @@ function printNastro(nastro,array,negArray,indexCentralChar,sideLength){
 	
 	tot = sideLength - p2.length;
 	if(tot < 0){
-		p2 = p2.substring(0,20);
+		p2 = p2.substring(0,sideLength);
 	}
 	for(var i=0; i< tot; i++){
 		p2 += "_";
@@ -1135,7 +1194,14 @@ function printNastro(nastro,array,negArray,indexCentralChar,sideLength){
 	for(var i=0; i<p2.length; i++){
 		finalStr += "<span class=\"outtextchar\">"+p2.charAt(i)+"</span>";
 	}
-	nastro.innerHTML = finalStr;
+	//Moving tape animation
+	Jnastro.animate({"margin-left":"-2px"},{duration:speed/3, complete: function(){
+		Jnastro.animate({"margin-left":"+4px"},{duration:speed/3, complete: function(){
+			nastro.innerHTML = finalStr; //Actual print of the new tape
+			Jnastro.css("margin-left", "");
+		}});
+	}});
+	
 	return p1+" "+c+" "+p2;
 }
 
@@ -1269,27 +1335,6 @@ function executeComand(parameters){
 	}
 	return res;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
