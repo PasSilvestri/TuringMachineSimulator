@@ -14,7 +14,7 @@ var timer;
 
 var comands;
 var loopFlag = 0;
-var stopPressed = 0;
+var stopPressed = 1;
 var speed = 0;
 var compRulesPresent = 0; //Stores if there are any compact rules
 
@@ -168,6 +168,11 @@ function setSpeed(){
 	else if(speedSelect.value == 10) speed = 50;
 	else if(speedSelect.value == "Max") speed = 0;
 	else if(speedSelect.value == "Result only") speed = 0;
+	
+	//If in execution, the code text area will get back the focus so to select the rule that is being executed
+	if(stopPressed == 0){
+		taCode.focus();
+	}
 }
 
 //The main function, runs the interpreter
@@ -233,7 +238,7 @@ function run(){
 	}
 	else{
 		//Starts the recursive timed loop
-		setTimeout(intervalFunction,speed);
+		intervalFunction();
 	}
 }
 
@@ -254,7 +259,7 @@ function intervalFunction(){
 			return;
 		}
 	}
-	stop();
+	setTimeout(stop,speed);
 }
 
 //Looping function that executes all commands
