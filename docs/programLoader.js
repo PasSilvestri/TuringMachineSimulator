@@ -5,7 +5,7 @@ var programSelect;
 var filePicker;
 
 var programPath = "./preset%20programs/";
-var programListFile = "%proglist%";
+var programListFile = "proglist";
 var programs;
 var customProg = new Array();
 customProg["Custom"] = "";
@@ -33,7 +33,7 @@ function programLoaderInit(){
 //When editing the program shown, save it
 function handleCustomProgram(){
 	customProg[programSelect.value] = ta.value;
-	console.log("Saving "+programSelect.value+": " + ta.value[ta.value.length-1]);
+	console.log("Autosaving "+programSelect.value);
 }
 
 function loadLocal(){
@@ -73,6 +73,7 @@ function load(){
 function loadProgramFromPreset(program){
 	ta.value = "Loading...";
 	var xhttp = new XMLHttpRequest();
+	
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			ta.value = this.responseText;
@@ -83,10 +84,12 @@ function loadProgramFromPreset(program){
 			console.log("Error loading from the preset folder!");
 		}
 	};
+	
 	xhttp.onerror = function() {
 		ta.value = "Error loading from the preset folder, no internet connection!";
 		console.log("Error loading from the preset folder, no internet connection!");
-	}
+	};
+	
 	xhttp.open("GET", programPath+program, true);
 	xhttp.send();
 }
@@ -98,6 +101,7 @@ function loadProgramFromDisk(files){
 	var file = files.item(0);
 	lastFileName = file.name;
 	var fileReader = new FileReader();
+	
 	fileReader.onload = function(event) {
 		ta.value = event.target.result;
 		if(programSelect.options[programSelect.options.length-1].innerHTML.startsWith("LOCAL:")){
@@ -108,10 +112,12 @@ function loadProgramFromDisk(files){
 		}
 		programSelect.selectedIndex = programSelect.options.length-1;
 		handleCustomProgram(); //Saves locally the newly loaded data
-	}
+	};
+	
 	fileReader.onerror = function(){
 		ta.value = "Error loading from the disk!";
-	}
+	};
+	
 	fileReader.readAsText(file);
 }
 
@@ -146,6 +152,7 @@ function loadProgramList(){
 //STUB function
 function save(){
 	console.log("Save file to disk!");
+	alert("Function still not available");
 }
 
 
