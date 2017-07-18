@@ -136,6 +136,7 @@ function init(){
 	enableRunBtn(true);
 	stepLabel.innerHTML = "Stopped";
 	speedSelect.addEventListener("change", setSpeed);
+	taCode.addEventListener("keydown",function(){preventChange(event);});
 }
 
 //Launched when enter is pressed in the input bar
@@ -150,6 +151,13 @@ function revertShowExp(){
 	if(opt1OldCode != "" && stopPressed == 1){
 		taCode.value = opt1OldCode;
 		opt1OldCode = "";
+	}
+}
+
+//Prevent changing the code while in execution
+function preventChange(event){
+	if(stopPressed == 0){
+		event.preventDefault();
 	}
 }
 
@@ -215,8 +223,11 @@ function run(){
 			taCode.value += comands[k].comand + "\n";
 		}
 	}
-	//diable during execution, will be enabled by stop()
+	//diasble during execution, will be enabled by stop()
 	opt1.disabled = true;
+	saveBtn.disabled = true;
+	loadBtn.disabled = true;
+	programSelect.disabled = true;
 	
 	
 	//Starts actual execution
@@ -247,6 +258,9 @@ function stop(){
 	stopPressed = 1;
 	enableRunBtn(true);
 	opt1.disabled = false;
+	saveBtn.disabled = false;
+	loadBtn.disabled = false;
+	programSelect.disabled = false;
 	stepLabel.innerHTML = "Stopped. Steps: " + general.stepCount;
 }
 

@@ -1,3 +1,4 @@
+//CompactCiao
 //This will print "Ciao" as the default example
 //But will do it with just 3 rules
 
