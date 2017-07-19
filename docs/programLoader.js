@@ -28,6 +28,36 @@ function programLoaderInit(){
 	ta.addEventListener("keyup",handleCustomProgram);
 	programSelect.addEventListener("change", loadLocal);
 	
+	//Drag&Drop event listener
+	ta.addEventListener("drop",drop,false);
+	ta.addEventListener("dragenter",dragEnter,false);
+	ta.addEventListener("dragleave",dragLeave,false);
+	
+}
+
+
+//Color textarea when file enters it
+function dragEnter(e){
+	e.stopPropagation();
+	e.preventDefault();
+	ta.style.background = "#ECECCC";
+}
+
+//Color textarea when file leaves it
+function dragLeave(e){
+	e.stopPropagation();
+	e.preventDefault();
+	ta.style.background = "";
+}
+
+//Loads file when dragged
+function drop(e){
+	e.stopPropagation();
+	e.preventDefault();
+	ta.style.background = "";	
+	
+	console.log("Loading from scratch");
+	loadProgramFromDisk(e.dataTransfer.files);
 }
 
 //When editing the program shown, save it
@@ -149,12 +179,40 @@ function loadProgramList(){
 	xhttp.send();
 }
 
-//STUB function
+//Ghater info on what to save and launch save function
 function save(){
-	console.log("Save file to disk!");
-	alert("Function still not available");
+	var filename;
+	if(programSelect.value == "Load from file"){
+		alert("This isn't a file, is an option");
+		return;
+	}
+	else if(programSelect.value.startsWith("LOCAL:")){
+		filename = programSelect.value.replace("LOCAL: ", "");
+	}
+	else{
+		filename = programSelect.value + ".txt";
+	}
+	saveToDisk(filename,ta.value);
 }
 
+//STUB function
+//Saves data in a file called filename
+function saveToDisk(filename,text){
+	var element = document.createElement('a');
+	if(!text.startsWith("//Program for Turing machine\n//By Pasquale Silvestri\n")){
+		text = "//Program for Turing machine\n//By Pasquale Silvestri\n" + text;
+	}
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	element.setAttribute('download', filename);
+
+	element.style.display = 'none';
+	document.body.appendChild(element);
+
+	element.click();
+
+	document.body.removeChild(element);
+	console.log(filename+" saved to disk!");
+}
 
 
 

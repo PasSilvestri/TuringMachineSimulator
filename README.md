@@ -129,12 +129,20 @@ That will use all the alphabet but the characters from capitol A, to d
 Have fun experimenting with the power of compact notation. Some examples will be provided in the Preset programs folder.<br/>
 
 
-## Todo
+## Options and extra features
 
-- Add possibilty to save and load programs
+- Expand/Recompact compacted rules
+- Load programs from the preset folder
+- Load programs from external file
+- Save current program to file
 
-## Known bugs
+## Known bugs & issues
 
-- javascript function startsWith doesen't work on IE11 and below
+- IE doesn't support starsWith, nor css variables
+
+## Infos
+
+I've developed this simulator on chrome, tested on chrome, firefox, opera(neon) and edge on windows, safari on macOS. Chrome shows the best performance.<br/>
+I've also tested it on Internet Explorer 11, but i haven't put a lot of effort into making it compatible and retrocompatible with IE.
 
 
