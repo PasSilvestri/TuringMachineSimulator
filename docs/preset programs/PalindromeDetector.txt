@@ -1,0 +1,25 @@
+//Program for Turing machine
+//By Pasquale Silvestri
+//Palindrome detector for any string format
+
+0,_,NO,N,>
+0,(^_),INIT,(^_),-
+
+INIT,(^_),L(^_),_,>
+INIT,_,SI,S,>
+
+L(^_),_,R(^_),_,<
+L(^_),[^_],L(^_),[^_],>
+
+R(^_),(^_),RESET,_,<
+R(^_),[^_],DEL,_,<
+R(^_),_,RESET,_,<
+
+RESET,(^_),RESET,(^_),<
+RESET,_,INIT,_,>
+
+DEL,(^_),DEL,_,<
+DEL,_,NO,N,>
+
+NO,_,FINE,O,<
+SI,_,FINE,I,<

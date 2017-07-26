@@ -10,15 +10,17 @@ var opt1Label;
 var Jnastro;
 
 var expControl;
-var timer;
 
-var comands;
-var loopFlag = 0;
-var stopPressed = 1;
-var speed = 0;
+var comands; //List of comands as ComandLine objects
+var loopFlag = 0; //Stores the return value of exevute()
+				  //If 0, comand not executed
+				  //If 1, comand executed
+				  //If -1, error occured
+var stopPressed = 1; //State if the machine is executing
+var speed = 0; //The speed of execution
 var compRulesPresent = 0; //Stores if there are any compact rules
 
-var opt1OldCode = "";
+var opt1OldCode = ""; //Stores the old versione of the program befor expansion by the first option (opt1)
 
 //Expansion logic flags and vars
 var alphabet = "!\"#$%&\'()*+,-./:;<=>?@0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[]^{|} "; //The space at the end is a usable char
@@ -86,28 +88,6 @@ function ExceptionControl(textObj){
     }
 }
 
-//Control time since loading
-function Timer(){
-	this.time = 0;
-	
-	this.increment = function(timer, granularity){
-		timer.time += granularity/1000;
-		console.log(timer.time);
-	}
-	
-	this.increment.bind(this);
-	
-	this.start = function(granularity){
-		granularity = granularity === undefined ? 1000 : granularity;
-		this.intCon = setInterval(this.increment,granularity ,this, granularity);
-	}
-	
-	this.stop = function(){
-		clearInterval(this.intCon);
-	}
-	
-}
-
 //Initialize all variables and graphic objects
 function init(){
 	//Init variables
@@ -124,8 +104,6 @@ function init(){
 	opt1Label = document.getElementById("opt1label");
 	
 	expControl = new ExceptionControl(stateLabel);
-	//timer = new Timer();
-	//timer.start(1000);
 
 	//Init nastro
 	printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
@@ -248,7 +226,7 @@ function run(){
 		},0);
 	}
 	else{
-		//Starts the recursive timed loop
+		//Starts the recursive timed loop for execution
 		intervalFunction();
 	}
 }
@@ -266,34 +244,29 @@ function stop(){
 
 //Wrapper for loop() while speed not max
 function intervalFunction(){
+	//If loopFlag == 1 then last execution actually executed something. If is 0 then last execution didn't execute anything, stop the program.
+	//stopPressed and error are check flags for the stop button or internal errors
 	if(loopFlag == 1 && stopPressed == 0 && expControl.error == 0){
-		loop();
-		if(stillExecutableComands(comands) && expControl.error == 0){
+        loop();
+		if(loopFlag == 1 && stopPressed == 0 && expControl.error == 0){
 			setTimeout(intervalFunction,speed);
 			return;
 		}
 	}
-	setTimeout(stop,speed);
+	stop();
 }
 
 //Looping function that executes all commands
 function loop(){
 	loopFlag = 0;
 	for(var i=0; i<comands.length; i++){
-		//Ignore comments
-		if(comands[i].comand.startsWith("//")){
-			continue;
-		}
-		//Ignore empty lines
-		if(isTrimmedEmpty(comands[i].comand) == 1){
-			continue;
-		}
+
 		//Execute and register result
 		var temp = replaceIfNotEscaped(comands[i].comand,",","§");
-		temp = temp.replace(/\\/g,"");
+		temp = temp.replace(/\\/g,""); //Parentesis and commas remained are just escaped
         var parameters = temp.split("§");
 
-		loopFlag = executeComand(parameters);
+        loopFlag = executeComand(parameters);
 		//If loopFlag == 1 break and restart for loop
 		//If loopFlag == -1 error occured
 		if(loopFlag != 0){
@@ -301,11 +274,12 @@ function loop(){
             //Print new state to screen
             if(speedSelect.value != "Result only"){
                 console.log("Nastro " + fromArrayToString(general.nastroValue,general.nastroNegValue));
-                printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength)
+                printNastro(nastro, general.nastroValue, general.nastroNegValue, general.nastroIndex, general.nastroSideLength);
                 if(expControl.error == 0){
                     stateLabel.innerHTML = "<pre>"+general.currentState;+"</pre>";
                 }
             }
+
 			if(!opt1.checked){
 				//This if is needed to change the speed during execution. With absolute focus on the textarea was impossible to select other speeds
 				if(document.querySelector(":focus") != speedSelect){
@@ -399,9 +373,11 @@ function retrieve(taCode, expControl) {
 		if(isTrimmedEmpty(comandList[i]) == 1){
 			continue;
 		}
+
 		var ch = true;
 		if((ch = areValidChars(comandList[i])) != true){
             expControl.syntaxNotValid(i+1,ch + " not valid char");
+            return null;
 		}
 
 		var tempComand = replaceIfNotEscaped(comandList[i],",","§");
@@ -420,9 +396,9 @@ function retrieve(taCode, expControl) {
 		
 
 		//cleaning parameters where spaces are uninfluential
-        parameters[0] = parameters[0].trim();
-		parameters[2] = parameters[2].trim();
-		parameters[4] = parameters[4].trim();
+        parameters[0] = parameters[0].trim(); //Current state
+		parameters[2] = parameters[2].trim(); //Next state
+		parameters[4] = parameters[4].trim(); //Movement
 
 		
 		//check for validity of parameters
@@ -979,7 +955,7 @@ function expand(cm,original,line){
 
 
 
-	if(class3Length){
+	if(class3Length != -1){
 		//Third class expansion
 		for(var k=0; k<array.length; k++) {
 			var s = replaceIfNotEscaped(array[k].comand,",","§");
@@ -1155,78 +1131,70 @@ function areValidChars(char){
 
 //Prints str to nastro with all the cells
 function printNastro(nastro,array,negArray,indexCentralChar,sideLength){
-	var str = fromArrayToString(array,negArray);
-	if(negArray !== undefined){
-		indexCentralChar = indexCentralChar+negArray.length;
-	}
-	var p1 = "";
-	var c = "_";
-	var p2 = "";
-	if(indexCentralChar >-1 && indexCentralChar < str.length){
-		
-		//Divide the string into the 3 pieces
-		p1 = str.substring(0,indexCentralChar);
-		c = str.charAt(indexCentralChar);
-		p2 = str.substring(indexCentralChar+1);
-		
-	}
-	else if(indexCentralChar >= str.length){
-		p1 = str;
-		var tot = indexCentralChar - str.length;
-		for(var i=0; i< tot; i++){
-			p1 += "_";
-		}
-		c = '_';
-	}
-	else if(indexCentralChar < 0){
-		p2 = str;
-		var tot = (indexCentralChar*-1)-1;
-		for(var i=0; i< tot; i++){
-			p2 = "_" + p2;
-		}
-		c = '_';
-	}
-	
-	//Set "_" remaning on each side
-	var tot = sideLength - p1.length;
-	if(tot < 0){
-		p1 = p1.substring(tot*-1);
-	}
-	for(var i=0; i< tot; i++){
-		p1 = "_" + p1;
-	}
-	
-	tot = sideLength - p2.length;
-	if(tot < 0){
-		p2 = p2.substring(0,sideLength);
-	}
-	for(var i=0; i< tot; i++){
-		p2 += "_";
-	}
-	
-	//Set the HTML
-	var finalStr = "";
-	for(var i=0; i<p1.length; i++){
-		finalStr += "<span class=\"outtextchar\">"+p1.charAt(i)+"</span>";
-	}
-	finalStr += "<span style=\"color: white; padding-left: 0.3vw; padding-right: 0.3vw; width: 1.3vw; height: 2vw; font-size: 2vw; background-color: var(--main-color);\">" + c + "</span>"
-	for(var i=0; i<p2.length; i++){
-		finalStr += "<span class=\"outtextchar\">"+p2.charAt(i)+"</span>";
-	}
-	//Moving tape animation
-	Jnastro.animate({"margin-left":"-2px"},{duration:speed/3, complete: function(){
-		Jnastro.animate({"margin-left":"+4px"},{duration:speed/3, complete: function(){
-			nastro.innerHTML = finalStr; //Actual print of the new tape
-			Jnastro.css("margin-left", "");
-		}});
-	}});
-	
-	return p1+" "+c+" "+p2;
+    var str = fromArrayToString(array,negArray);
+
+    if(negArray != undefined){
+        indexCentralChar = indexCentralChar+negArray.length;
+    }
+    var p1 = "";
+    var c = "_";
+    var p2 = "";
+    if(indexCentralChar >-1 && indexCentralChar < str.length){
+
+        //Divide the string into the 3 pieces
+        p1 = str.substring(0,indexCentralChar);
+        c = str.charAt(indexCentralChar);
+        p2 = str.substring(indexCentralChar+1);
+
+    }
+    else if(indexCentralChar >= str.length){
+        p1 = str;
+        c = '_';
+    }
+    else if(indexCentralChar < 0){
+        p2 = str;
+        c = '_';
+    }
+
+    var finalStr = "";
+    for(var i=0; i<sideLength-p1.length; i++){
+        finalStr += "<span class=\"outtextchar\">_</span>";
+    }
+    var tempStr = "";
+    for(i=p1.length-1; i >= 0 && i >= (p1.length-sideLength); i--){
+        tempStr = "<span class=\"outtextchar\">"+p1.charAt(i)+"</span>" + tempStr;
+    }
+    finalStr += tempStr;
+    finalStr += "<span style=\"color: white; padding-left: 0.3vw; padding-right: 0.3vw; width: 1.3vw; height: 2vw; font-size: 2vw; background-color: var(--main-color);\">" + c + "</span>";
+    for(i=0; i<p2.length && i <sideLength; i++){
+        finalStr += "<span class=\"outtextchar\">"+p2.charAt(i)+"</span>";
+    }
+    for(var i=0; i<sideLength-p2.length; i++){
+        finalStr += "<span class=\"outtextchar\">_</span>";
+    }
+
+    if(speed != 0) {
+        //Moving tape animation
+        Jnastro.animate({"margin-left": "-2px"}, {
+            duration: speed / 3, complete: function () {
+                Jnastro.animate({"margin-left": "+4px"}, {
+                    duration: speed / 3, complete: function () {
+                        nastro.innerHTML = finalStr; //Actual print of the new tape
+                        Jnastro.css("margin-left", "");
+                    }
+                });
+            }
+        });
+    }
+    else{
+        nastro.innerHTML = finalStr; //Print of the new tape
+    }
+    return p1+" "+c+" "+p2;
 }
 
 //Function to change char at the specified index
 function setCharAt(str,index,chr) {
-    if(index > str.length-1) return str;
+    if(index > str.length-1 || index < 0) return str;
     return str.substr(0,index) + chr + str.substr(index+1);
 }
 
@@ -1294,9 +1262,6 @@ function executeComand(parameters){
 				if(parameters[3].charAt(0) == '_'){
 					delete general.nastroValue[general.nastroIndex];
 				}
-				else if(parameters[3].charAt(0) == '\\'){
-					general.nastroValue[general.nastroIndex] = parameters[3].charAt(1);
-				}
 				else{
 					general.nastroValue[general.nastroIndex] = parameters[3].charAt(0);
 				}
@@ -1326,9 +1291,6 @@ function executeComand(parameters){
 				if(parameters[3].charAt(0) == '_'){
 					delete general.nastroNegValue[(general.nastroIndex*-1)-1];
 				}
-				else if(parameters[3].charAt(0) == '\\'){
-					general.nastroNegValue[(general.nastroIndex*-1)-1] = parameters[3].charAt(1);
-				}
 				else{
 					general.nastroNegValue[(general.nastroIndex*-1)-1] = parameters[3].charAt(0);
 				}
@@ -1354,22 +1316,3 @@ function executeComand(parameters){
 	}
 	return res;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
