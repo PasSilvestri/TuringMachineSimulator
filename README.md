@@ -16,7 +16,7 @@ Current state is the state the machine is in, shown by the text right above the 
 Char read is the character read in the current cell on the tape. The current cell is the one in green.<br/> 
 Next state is the state the machine have to transition to after executing this rule.<br/>
 Char to write is the character that will replace the one currently present on the tape.<br/>
-Movement is the where the tape has to move, ">" will move the tape to the right by one cell, 
+Movement is where the tape has to move, ">" will move the tape to the right by one cell, 
 "<" will move it to the left, "-" means no movement.<br/>
 
 You can input a starting value to the tape with the input bar underneath the tape, otherwise it's considered empty.<br/>
@@ -34,9 +34,9 @@ The machine will stop executing when there isn't a rule that applies to the curr
 
 Is possible to write multiple rules in one with the compact rule notation.<br/>
 It consist in specifying a sequence of characters inside parenthesis in the 5 parameters instead of one.<br/>
-There are 3 types of usable brakets, "(,[,{". Each one of them makes up a class of expansion.<br/>
-Each class of expansion has to have the same length for the entier rule, in whichever rule is used, because the same class of expansion is expanded synchronously.<br/>
-Insted different classed of expansion will be expanded asynchronously.<br/>
+There are 3 types of usable brakets, "(, [, {". Each one of them makes up a class of expansion.<br/>
+Each class of expansion has to have the same length for the entier rule, in whichever parameter of the rule is used, because the same class of expansion is expanded synchronously.<br/>
+Insted different classes of expansion will be expanded asynchronously.<br/>
 <br/>
 For Example<br/>
 ```
