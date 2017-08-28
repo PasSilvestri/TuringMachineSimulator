@@ -105,6 +105,7 @@ function loadProgramFromPreset(program){
 	var xhttp = new XMLHttpRequest();
 	
 	xhttp.onreadystatechange = function() {
+		console.log("Response here, state: " + this.readyState);
 		if (this.readyState == 4 && this.status == 200) {
 			ta.value = this.responseText;
 			handleCustomProgram(); //Saves locally the newly loaded data
@@ -122,6 +123,7 @@ function loadProgramFromPreset(program){
 	
 	xhttp.open("GET", programPath+program, true);
 	xhttp.send();
+	DB.style.display = "inline-block";
 }
 
 //load the specified program from the user's computer
@@ -195,7 +197,6 @@ function save(){
 	saveToDisk(filename,ta.value);
 }
 
-//STUB function
 //Saves data in a file called filename
 function saveToDisk(filename,text){
 	var element = document.createElement('a');

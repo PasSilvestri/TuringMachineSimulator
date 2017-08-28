@@ -1,0 +1,6 @@
+# Logs
+logs
+*.log
+
+#private data
+private/
